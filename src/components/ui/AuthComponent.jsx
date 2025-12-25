@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, useMemo, useCallback, createContext, Children } from "react";
+import { useAuth } from "@/context/AuthContext";
 // Importing class-variance-authority for the built-in button component
 import { cva } from "class-variance-authority";
 // Importing icons from lucide-react
@@ -161,6 +162,45 @@ export const AuthComponent = ({ logo = <DefaultLogo />, brandName = "Digital Nak
     const [modalStatus, setModalStatus] = useState('closed');
     const [modalErrorMessage, setModalErrorMessage] = useState('');
     const confettiRef = useRef(null);
+    const { signInWithGoogle, currentUser, logout } = useAuth();
+
+    const handleGoogleSignIn = async () => {
+        try {
+            await signInWithGoogle();
+            fireSideCanons();
+        } catch (error) {
+            console.error("Google Sign In Error:", error);
+            setModalErrorMessage("Failed to sign in with Google.");
+            setModalStatus('error');
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+        } catch (error) {
+            console.error("Logout Error:", error);
+        }
+    };
+
+    if (currentUser) {
+        return (
+            <div className="bg-slate-50 dark:bg-slate-950 h-screen w-full flex flex-col text-slate-900 dark:text-slate-100 overflow-hidden relative">
+                <div className="absolute inset-0 z-0 bg-slate-900"><GradientBackground /></div>
+                <Confetti ref={confettiRef} manualstart className="fixed top-0 left-0 w-full h-full pointer-events-none z-[999]" />
+                <div className="relative z-10 flex flex-col items-center justify-center h-full gap-8 p-4">
+                    <BlurFade delay={0.25}><div className="bg-orange-600 text-white rounded-full p-4 shadow-lg"><UserPlus className="w-12 h-12" /></div></BlurFade>
+                    <div className="text-center space-y-2">
+                        <BlurFade delay={0.5}><h1 className="text-4xl font-bold text-white">Welcome, {currentUser.displayName || "User"}!</h1></BlurFade>
+                        <BlurFade delay={0.75}><p className="text-slate-200">You are successfully signed in.</p></BlurFade>
+                    </div>
+                    <BlurFade delay={1.0}>
+                        <GlassButton onClick={handleLogout} className="bg-red-500/20 hover:bg-red-500/30">Sign Out</GlassButton>
+                    </BlurFade>
+                </div>
+            </div>
+        );
+    }
 
     const isEmailValid = /\S+@\S+\.\S+/.test(email);
     const isPasswordValid = password.length >= 6;
@@ -301,7 +341,7 @@ export const AuthComponent = ({ logo = <DefaultLogo />, brandName = "Digital Nak
                             <BlurFade delay={0.25 * 1} className="w-full"><div className="text-center"><p className="font-sans font-medium text-4xl sm:text-5xl tracking-tight text-white whitespace-nowrap drop-shadow-lg">Digital Naka</p></div></BlurFade>
                             <BlurFade delay={0.25 * 2}><p className="text-sm font-medium text-slate-200/80">Connecting Workers to Work</p></BlurFade>
                             <BlurFade delay={0.25 * 3}><div className="flex items-center justify-center gap-4 w-full">
-                                <GlassButton contentClassName="flex items-center justify-center gap-2" size="sm"><GoogleIcon /><span className="font-semibold text-white">Google</span></GlassButton>
+                                <GlassButton onClick={handleGoogleSignIn} contentClassName="flex items-center justify-center gap-2" size="sm"><GoogleIcon /><span className="font-semibold text-white">Google</span></GlassButton>
                                 <GlassButton contentClassName="flex items-center justify-center gap-2" size="sm"><UserPlus className="w-5 h-5 text-white" /><span className="font-semibold text-white">Sign Up</span></GlassButton>
                             </div></BlurFade>
                             <BlurFade delay={0.25 * 4} className="w-[300px]"><div className="flex items-center w-full gap-2 py-2"><hr className="w-full border-white/20" /><span className="text-xs font-semibold text-white/60">OR LOGIN WITH</span><hr className="w-full border-white/20" /></div></BlurFade>
