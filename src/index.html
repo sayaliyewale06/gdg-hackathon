@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crisis Response Platform - Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --dark-color: #1f2937;
+            --light-color: #f9fafb;
+            --gray-color: #6b7280;
+            --border-radius: 12px;
+            --box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f1f5f9;
+            color: var(--dark-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            background-color: white;
+            padding: 1.5rem;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transform: translateX(0);
+            transition: var(--transition);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .nav-links {
+            list-style: none;
+            flex-grow: 1;
+        }
+
+        .nav-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.9rem 1rem;
+            border-radius: var(--border-radius);
+            color: var(--gray-color);
+            text-decoration: none;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            background-color: #f3f4f6;
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .nav-links a.active {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-links i {
+            width: 22px;
+            text-align: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            margin-top: auto;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .user-info h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .user-info p {
+            font-size: 0.85rem;
+            color: var(--gray-color);
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .page-title h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark-color);
+        }
+
+        .page-title p {
+            color: var(--gray-color);
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-btn {
+            position: relative;
+            background: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+        }
+
+        .notification-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background-color: var(--danger-color);
+            color: white;
+            font-size: 0.7rem;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .report-incident-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .report-incident-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats-card {
+            grid-column: span 3;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            transition: var(--transition);
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-card:nth-child(1) { animation-delay: 0.1s; }
+        .stats-card:nth-child(2) { animation-delay: 0.2s; }
+        .stats-card:nth-child(3) { animation-delay: 0.3s; }
+        .stats-card:nth-child(4) { animation-delay: 0.4s; }
+
+        .stats-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: white;
+        }
+
+        .stats-icon.incidents {
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+        }
+
+        .stats-icon.resources {
+            background: linear-gradient(135deg, #10b981, #34d399);
+        }
+
+        .stats-icon.agencies {
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+        }
+
+        .stats-icon.response {
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+        }
+
+        .stats-info h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stats-info p {
+            color: var(--gray-color);
+            font-size: 0.9rem;
+        }
+
+        /* Map Container */
+        .map-container {
+            grid-column: span 8;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            animation: fadeIn 0.8s ease-out forwards;
+            opacity: 0;
+            animation-delay: 0.5s;
+        }
+
+        .map-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.2rem;
+        }
+
+        .map-header h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .map-filters {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .filter-btn {
+            background: #f3f4f6;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        #crisisMap {
+            height: 400px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 1rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* Recent Incidents */
+        .recent-incidents {
+            grid-column: span 4;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            animation: fadeInRight 0.8s ease-out forwards;
+            opacity: 0;
+            animation-delay: 0.6s;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .view-all {
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .view-all:hover {
+            text-decoration: underline;
+        }
+
+        .incidents-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .incident-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--warning-color);
+            background-color: #fffbeb;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .incident-item:hover {
+            transform: translateX(5px);
+            background-color: #fef3c7;
+        }
+
+        .incident-item.critical {
+            border-left-color: var(--danger-color);
+            background-color: #fef2f2;
+        }
+
+        .incident-item.critical:hover {
+            background-color: #fee2e2;
+        }
+
+        .incident-item.resolved {
+            border-left-color: var(--secondary-color);
+            background-color: #ecfdf5;
+        }
+
+        .incident-item.resolved:hover {
+            background-color: #d1fae5;
+        }
+
+        .incident-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .incident-info h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .incident-info p {
+            font-size: 0.8rem;
+            color: var(--gray-color);
+        }
+
+        /* Charts Section */
+        .charts-container {
+            grid-column: span 12;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+        }
+
+        .chart-card:nth-child(1) { animation-delay: 0.7s; }
+        .chart-card:nth-child(2) { animation-delay: 0.8s; }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .stats-card {
+                grid-column: span 6;
+            }
+            
+            .map-container {
+                grid-column: span 12;
+            }
+            
+            .recent-incidents {
+                grid-column: span 12;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 1rem;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-card {
+                grid-column: span 12;
+            }
+            
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+            }
+        }
+
+        /* Map Legend */
+        .map-legend {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-color.critical {
+            background-color: var(--danger-color);
+        }
+
+        .legend-color.warning {
+            background-color: var(--warning-color);
+        }
+
+        .legend-color.info {
+            background-color: var(--primary-color);
+        }
+
+        .legend-color.resolved {
+            background-color: var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="logo-text">CrisisResponse</div>
+            </div>
+            
+            <ul class="nav-links">
+                <li><a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="#"><i class="fas fa-map-marked-alt"></i> Live Map</a></li>
+                <li><a href="#"><i class="fas fa-exclamation-triangle"></i> Incident Reports</a></li>
+                <li><a href="#"><i class="fas fa-boxes"></i> Resource Tracker</a></li>
+                <li><a href="#"><i class="fas fa-users"></i> Agencies</a></li>
+                <li><a href="#"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+                <li><a href="#"><i class="fas fa-bell"></i> Alerts</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            </ul>
+            
+            <div class="user-profile">
+                <div class="user-avatar">CR</div>
+                <div class="user-info">
+                    <h4>Crisis Coordinator</h4>
+                    <p>Admin User</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="page-title">
+                    <h1>Crisis Response Dashboard</h1>
+                    <p>Real-time monitoring of incidents and resources</p>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <button class="report-incident-btn pulse">
+                        <i class="fas fa-plus-circle"></i>
+                        Report Incident
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Stats Cards -->
+                <div class="stats-card">
+                    <div class="stats-icon incidents">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h3>24</h3>
+                        <p>Active Incidents</p>
+                    </div>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="stats-icon resources">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h3>156</h3>
+                        <p>Resources Available</p>
+                    </div>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="stats-icon agencies">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h3>12</h3>
+                        <p>Active Agencies</p>
+                    </div>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="stats-icon response">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h3>8.2min</h3>
+                        <p>Avg. Response Time</p>
+                    </div>
+                </div>
+                
+                <!-- Map Container -->
+                <div class="map-container">
+                    <div class="map-header">
+                        <h3>Crisis Map Overview</h3>
+                        <div class="map-filters">
+                            <button class="filter-btn active">All</button>
+                            <button class="filter-btn">Critical</button>
+                            <button class="filter-btn">Resources</button>
+                            <button class="filter-btn">Agencies</button>
+                        </div>
+                    </div>
+                    
+                    <div id="crisisMap"></div>
+                    
+                    <div class="map-legend">
+                        <div class="legend-item">
+                            <div class="legend-color critical"></div>
+                            <span>Critical Incident</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color warning"></div>
+                            <span>Warning</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color info"></div>
+                            <span>Info</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color resolved"></div>
+                            <span>Resolved</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Incidents -->
+                <div class="recent-incidents">
+                    <div class="section-header">
+                        <h3>Recent Incidents</h3>
+                        <a href="#" class="view-all">View All</a>
+                    </div>
+                    
+                    <div class="incidents-list">
+                        <div class="incident-item critical">
+                            <div class="incident-icon" style="background-color: var(--danger-color);">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="incident-info">
+                                <h4>Fire Outbreak - Downtown</h4>
+                                <p>Reported 15 min ago • High Severity</p>
+                            </div>
+                        </div>
+                        
+                        <div class="incident-item">
+                            <div class="incident-icon" style="background-color: var(--warning-color);">
+                                <i class="fas fa-tint"></i>
+                            </div>
+                            <div class="incident-info">
+                                <h4>Flood Alert - Riverside</h4>
+                                <p>Reported 42 min ago • Medium Severity</p>
+                            </div>
+                        </div>
+                        
+                        <div class="incident-item">
+                            <div class="incident-icon" style="background-color: var(--primary-color);">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="incident-info">
+                                <h4>Power Outage - North District</h4>
+                                <p>Reported 1.2 hours ago • Medium Severity</p>
+                            </div>
+                        </div>
+                        
+                        <div class="incident-item resolved">
+                            <div class="incident-icon" style="background-color: var(--secondary-color);">
+                                <i class="fas fa-ambulance"></i>
+                            </div>
+                            <div class="incident-info">
+                                <h4>Medical Emergency - Mall</h4>
+                                <p>Resolved 2 hours ago • Response: 6 min</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts Section -->
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="section-header">
+                            <h3>Incidents by Type</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="incidentTypeChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="section-header">
+                            <h3>Response Time Trends</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="responseTimeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Leaflet Map
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the map
+            const map = L.map('crisisMap').setView([40.7128, -74.0060], 12);
+            
+            // Add OpenStreetMap tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Add custom markers for incidents
+            const incidents = [
+                {lat: 40.7128, lng: -74.0060, type: 'critical', title: 'Fire Outbreak', description: 'Major fire in downtown area'},
+                {lat: 40.7589, lng: -73.9851, type: 'warning', title: 'Traffic Accident', description: 'Multi-vehicle collision'},
+                {lat: 40.7489, lng: -73.9680, type: 'info', title: 'Medical Emergency', description: 'Heart attack victim'},
+                {lat: 40.7282, lng: -74.0776, type: 'resolved', title: 'Power Outage', description: 'Resolved - power restored'},
+                {lat: 40.7549, lng: -73.9840, type: 'critical', title: 'Gas Leak', description: 'Reported gas leak in building'},
+                {lat: 40.7614, lng: -73.9776, type: 'warning', title: 'Building Damage', description: 'Structural damage after storm'}
+            ];
+            
+            // Define marker colors based on incident type
+            const iconColors = {
+                critical: '#ef4444',
+                warning: '#f59e0b',
+                info: '#3b82f6',
+                resolved: '#10b981'
+            };
+            
+            // Create custom icons
+            function createCustomIcon(type) {
+                return L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background-color: ${iconColors[type]}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;"><i class="fas fa-${type === 'critical' ? 'fire' : type === 'warning' ? 'exclamation' : type === 'resolved' ? 'check' : 'info'}"></i></div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+            }
+            
+            // Add markers to the map
+            incidents.forEach(incident => {
+                const marker = L.marker([incident.lat, incident.lng], {
+                    icon: createCustomIcon(incident.type)
+                }).addTo(map);
+                
+                marker.bindPopup(`
+                    <div style="font-weight: 600; font-size: 16px; margin-bottom: 5px;">${incident.title}</div>
+                    <div style="font-size: 14px; margin-bottom: 8px;">${incident.description}</div>
+                    <div style="font-size: 12px; color: ${iconColors[incident.type]}">
+                        <i class="fas fa-circle"></i> ${incident.type.charAt(0).toUpperCase() + incident.type.slice(1)}
+                    </div>
+                `);
+            });
+            
+            // Add a circle to show resource concentration area
+            L.circle([40.7128, -74.0060], {
+                color: '#10b981',
+                fillColor: '#10b981',
+                fillOpacity: 0.1,
+                radius: 1000
+            }).addTo(map).bindPopup('Resource Hub: Emergency supplies and personnel');
+            
+            // Initialize Charts
+            const ctx1 = document.getElementById('incidentTypeChart').getContext('2d');
+            const incidentTypeChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Medical', 'Fire', 'Natural Disaster', 'Infrastructure', 'Security', 'Other'],
+                    datasets: [{
+                        data: [22, 18, 15, 25, 12, 8],
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#ef4444',
+                            '#f59e0b',
+                            '#8b5cf6',
+                            '#10b981',
+                            '#6b7280'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const ctx2 = document.getElementById('responseTimeChart').getContext('2d');
+            const responseTimeChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Response Time (minutes)',
+                        data: [12, 10, 8, 9, 7, 10, 8],
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#2563eb',
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Minutes'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Add interactivity to filter buttons
+            document.querySelectorAll('.filter-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // In a real app, this would filter the map markers
+                    // For demo, we'll just show an alert
+                    console.log(`Filter changed to: ${this.textContent}`);
+                });
+            });
+            
+            // Add click event to report incident button
+            document.querySelector('.report-incident-btn').addEventListener('click', function() {
+                alert('Incident reporting modal would open here. This would allow users to report new crises with location, severity, and details.');
+            });
+            
+            // Add click event to notification button
+            document.querySelector('.notification-btn').addEventListener('click', function() {
+                alert('You have 3 new notifications:\n1. New resource allocation available\n2. Incident #245 resolved\n3. Weather alert for your area');
+            });
+            
+            // Add hover effects to incident items
+            document.querySelectorAll('.incident-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const incidentTitle = this.querySelector('h4').textContent;
+                    alert(`Opening details for: ${incidentTitle}\n\nIn a real application, this would show detailed incident information, status updates, and response actions.`);
+                });
+            });
+            
+            // Animate stats cards on scroll (simulated)
+            const statsCards = document.querySelectorAll('.stats-card');
+            statsCards.forEach(card => {
+                card.style.opacity = '1';
+            });
+        });
+    </script>
+</body>
+</html>
