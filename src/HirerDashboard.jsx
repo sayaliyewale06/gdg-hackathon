@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 import './HirerDashboard.css';
 import {
     LayoutDashboard,
@@ -19,6 +21,31 @@ import {
 } from 'lucide-react';
 
 const HirerDashboard = () => {
+    const { currentUser, userRole, logout } = useAuth();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // Redirect if not authenticated or wrong role
+        if (!currentUser) {
+            navigate('/');
+        } else if (userRole && userRole !== 'hire') {
+            navigate('/worker-dashboard');
+        }
+    }, [currentUser, userRole, navigate]);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/');
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    };
+
+    if (!currentUser) {
+        return <div style={{ padding: '20px', color: 'white', textAlign: 'center' }}>Loading...</div>;
+    }
+
     return (
         <div className="hirer-dashboard">
 
@@ -52,7 +79,23 @@ const HirerDashboard = () => {
                         <Bell size={20} />
                         <span className="badge">1</span>
                     </button>
-                    <div className="user-avatar-circle">AK</div>
+                    <div className="user-avatar-circle">
+                        {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            background: 'transparent',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            color: 'white',
+                            padding: '4px 12px',
+                            borderRadius: '4px',
+                            marginLeft: '10px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Logout
+                    </button>
                 </div>
             </header>
 
@@ -65,15 +108,15 @@ const HirerDashboard = () => {
                     <div className="profile-card">
                         <div className="profile-image-wrapper">
                             <img
-                                src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                                alt="Amit Khanna"
+                                src={currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+                                alt={currentUser.displayName || "Hirer"}
                                 className="profile-img"
                             />
                         </div>
                         <div className="profile-details">
-                            <h2>Amit Khanna</h2>
+                            <h2>{currentUser.displayName || "Hirer"}</h2>
                             <div className="role">Employer</div>
-                            <div className="phone">+91 9876543210</div>
+                            <div className="phone">{currentUser.email || "+91 9876543210"}</div>
                         </div>
                     </div>
 
@@ -128,7 +171,7 @@ const HirerDashboard = () => {
                     <div className="dashboard-center-col">
                         <div className="welcome-section">
                             <h1>Hirer Dashboard</h1>
-                            <p>Welcome, <strong>Amit Khanna!</strong> Find & hire daily-wage workers instantly.</p>
+                            <p>Welcome, <strong>{currentUser.displayName || "Hirer"}!</strong> Find & hire daily-wage workers instantly.</p>
                         </div>
 
                         {/* Stats Overview */}
@@ -358,7 +401,6 @@ const HirerDashboard = () => {
 
                 </main>
             </div>
-
         </div>
     );
 };

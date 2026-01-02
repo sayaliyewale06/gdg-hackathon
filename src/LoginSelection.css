@@ -234,9 +234,14 @@ html {
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-.login-btn {
+/* Google Login Styles */
+.google-login-wrapper {
+  margin-top: 10px;
+}
+
+.google-login-btn {
   width: 100%;
-  padding: 14px;
+  padding: 14px 20px;
   border-radius: 12px;
   border: none;
   font-family: inherit;
@@ -244,24 +249,67 @@ html {
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 10px;
   background: var(--text-main);
   color: #1a1a2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
 }
 
-.move-hire .login-btn {
+.google-login-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.google-login-btn-hire {
   background: var(--hire-accent);
   color: #1a1a2e;
 }
 
-.move-worker .login-btn {
+.google-login-btn-worker {
   background: var(--worker-accent);
   color: #fff;
 }
 
-.login-btn:hover {
+.google-login-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   filter: brightness(1.1);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-message {
+  background: rgba(233, 69, 96, 0.1);
+  border: 1px solid rgba(233, 69, 96, 0.3);
+  color: #ff6b82;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 /* Responsive */

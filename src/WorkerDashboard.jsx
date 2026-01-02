@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 import './WorkerDashboard.css';
 import WorkerEarnings from './WorkerEarnings';
 import WorkerMyJobs from './WorkerMyJobs';
@@ -8,7 +10,31 @@ import WorkerActiveJobs from './WorkerActiveJobs';
 import { FaUserCircle, FaSearch, FaBriefcase, FaStar, FaWallet, FaMapMarkerAlt, FaBell, FaUsers, FaPlus, FaCheckCircle, FaGlobe, FaArrowUp, FaQrcode } from 'react-icons/fa';
 
 const WorkerDashboard = () => {
+    const { currentUser, userRole, logout } = useAuth();
+    const navigate = useNavigate();
     const [activeView, setActiveView] = useState('dashboard');
+
+    useEffect(() => {
+        // Redirect if not authenticated or wrong role
+        if (!currentUser) {
+            navigate('/');
+        } else if (userRole && userRole !== 'worker') {
+            navigate('/hire-dashboard');
+        }
+    }, [currentUser, userRole, navigate]);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/');
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    };
+
+    if (!currentUser) {
+        return <div style={{ padding: '20px', color: 'white', textAlign: 'center' }}>Loading...</div>;
+    }
 
     return (
         <div className="worker-dashboard">
@@ -30,14 +56,30 @@ const WorkerDashboard = () => {
                 </nav>
 
                 <div className="header-actions">
-                    <div className="user-avatar-circle">RK</div>
+                    <div className="user-avatar-circle">
+                        {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'W'}
+                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>Rajesh Kumar</span>
+                        <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>{currentUser.displayName || "Worker"}</span>
                         <span style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>Top Worker</span>
                     </div>
                     <button className="icon-btn">
                         <FaBell />
                         <span className="badge">3</span>
+                    </button>
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            background: 'transparent',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            color: 'white',
+                            padding: '4px 12px',
+                            borderRadius: '4px',
+                            marginLeft: '10px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Logout
                     </button>
                 </div>
             </header>
@@ -48,13 +90,16 @@ const WorkerDashboard = () => {
                 <aside className="left-panel">
                     <div className="profile-card">
                         <div className="profile-image-wrapper">
-                            {/* Placeholder for Rajesh's Image, using a generic avatar or color for now */}
-                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLe5PABjXc17cjIMOibECLM7ppDwMmiDg6Dw&s" alt="Rajesh Kumar" className="profile-img" />
+                            <img
+                                src={currentUser.photoURL || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLe5PABjXc17cjIMOibECLM7ppDwMmiDg6Dw&s"}
+                                alt={currentUser.displayName || "Worker"}
+                                className="profile-img"
+                            />
                         </div>
                         <div className="profile-details">
-                            <h2>Rajesh Kumar</h2>
+                            <h2>{currentUser.displayName || "Worker"}</h2>
                             <p className="role">Top Worker</p>
-                            <p className="phone">+91 98765 43210</p>
+                            <p className="phone">{currentUser.email || "+91 98765 43210"}</p>
                         </div>
                     </div>
 
@@ -113,7 +158,7 @@ const WorkerDashboard = () => {
                             <div className="dashboard-center-col">
                                 <div className="welcome-section">
                                     <h1>Worker Dashboard</h1>
-                                    <p>Welcome, Rajesh! Find and apply for daily-wage jobs in your area.</p>
+                                    <p>Welcome, {currentUser.displayName || "Worker"}! Find and apply for daily-wage jobs in your area.</p>
                                 </div>
 
                                 {/* Stats Row */}
