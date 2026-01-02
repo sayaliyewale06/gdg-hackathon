@@ -11,4 +11,24 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow-y: auto;
+  /* Ensure vertical scrolling is enabled */
+}
+
+/* Force visible scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
