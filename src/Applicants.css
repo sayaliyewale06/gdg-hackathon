@@ -1,0 +1,345 @@
+/* Applicants Page Styles */
+
+/* Header & Breadcrumbs */
+.applicants-header-section {
+    margin-bottom: 24px;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-text);
+    margin: 8px 0 4px 0;
+}
+
+.page-subtitle {
+    color: var(--secondary-text);
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Filter Bar */
+.filter-bar {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.filter-select {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background-color: #F8F9FA;
+    border: 1px solid #E5E0D8;
+    color: var(--primary-text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.salary-range {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #F8F9FA;
+    border: 1px solid #E5E0D8;
+    padding: 4px 12px;
+    border-radius: 8px;
+}
+
+.salary-input {
+    width: 60px;
+    border: none;
+    background: transparent;
+    padding: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--primary-text);
+    outline: none;
+}
+
+.filter-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.clear-filters {
+    color: var(--secondary-text);
+    text-decoration: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.clear-filters:hover {
+    color: var(--primary-text);
+    text-decoration: underline;
+}
+
+.btn-filter {
+    background-color: var(--accent-orange);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-filter:hover {
+    background-color: #c57645;
+}
+
+/* Applicants List */
+.applicants-list-header {
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-text);
+}
+
+.applicants-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.applicant-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 24px;
+    align-items: center;
+    transition: box-shadow 0.2s;
+    border: 1px solid transparent;
+}
+
+.applicant-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: #f0f0f0;
+}
+
+.applicant-img-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #f5f5f5;
+}
+
+.applicant-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.applicant-main-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.applicant-name {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary-text);
+}
+
+.applicant-role {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--secondary-text);
+}
+
+.applicant-location {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--secondary-text);
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+.applicant-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 250px;
+}
+
+.rating-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--primary-text);
+    font-size: 0.9rem;
+}
+
+.stars {
+    color: #F4B400;
+    /* Gold */
+    letter-spacing: 2px;
+}
+
+.experience-row {
+    font-size: 0.9rem;
+    color: var(--primary-text);
+}
+
+.skills-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.skill-tag {
+    background: #EFEFEF;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: var(--primary-text);
+    font-weight: 500;
+}
+
+.applicant-wages-contact {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    min-width: 180px;
+}
+
+.wage-row {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--primary-text);
+}
+
+.wage-unit {
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+    font-weight: 400;
+}
+
+.contact-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-shortlist {
+    background-color: var(--accent-orange);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    height: fit-content;
+    white-space: nowrap;
+}
+
+.btn-shortlist:hover {
+    background-color: #c57645;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 24px 0;
+    gap: 8px;
+}
+
+.page-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--primary-text);
+    font-weight: 500;
+}
+
+.page-btn.active {
+    background: var(--accent-orange);
+    color: white;
+    border-color: var(--accent-orange);
+}
+
+.page-btn:hover:not(.active) {
+    background: #f5f5f5;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .applicant-card {
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+            "img info"
+            "details details"
+            "wage wage"
+            "action action";
+        gap: 16px;
+    }
+
+    .applicant-img-container {
+        grid-area: img;
+    }
+
+    .applicant-main-info {
+        grid-area: info;
+    }
+
+    .applicant-details {
+        grid-area: details;
+    }
+
+    .applicant-wages-contact {
+        grid-area: wage;
+        align-items: flex-start;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .btn-shortlist {
+        grid-area: action;
+        width: 100%;
+    }
+}

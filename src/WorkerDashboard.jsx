@@ -7,6 +7,7 @@ import WorkerMyJobs from './WorkerMyJobs';
 import WorkerReviews from './WorkerReviews';
 import WorkerQRCode from './WorkerQRCode';
 import WorkerActiveJobs from './WorkerActiveJobs';
+import WorkerFindJobs from './WorkerFindJobs';
 import { FaUserCircle, FaSearch, FaBriefcase, FaStar, FaWallet, FaMapMarkerAlt, FaBell, FaUsers, FaPlus, FaCheckCircle, FaGlobe, FaArrowUp, FaQrcode } from 'react-icons/fa';
 
 const WorkerDashboard = () => {
@@ -40,39 +41,28 @@ const WorkerDashboard = () => {
         <div className="worker-dashboard">
             {/* Top Header */}
             <header className="main-header">
-                <div className="brand">
+                <div className="brand" onClick={() => setActiveView('dashboard')} style={{ cursor: 'pointer' }}>
                     <FaMapMarkerAlt className="brand-icon" />
                     <span>Digital Naka</span>
                 </div>
 
-                <nav className="top-nav">
-                    <a href="#" className={`nav-link ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}><FaBriefcase /> Dashboard</a>
-                    <a href="#" className="nav-link"><FaSearch /> Find Jobs</a>
-                    <a href="#" className={`nav-link ${activeView === 'activejobs' ? 'active' : ''}`} onClick={() => setActiveView('activejobs')}><FaBriefcase /> Active Jobs</a>
-                    <a href="#" className={`nav-link ${activeView === 'myjobs' ? 'active' : ''}`} onClick={() => setActiveView('myjobs')}><FaUserCircle /> My Jobs</a>
-                    <a href="#" className={`nav-link ${activeView === 'reviews' ? 'active' : ''}`} onClick={() => setActiveView('reviews')}><FaStar /> Reviews</a>
-                    <a href="#" className={`nav-link ${activeView === 'qrcode' ? 'active' : ''}`} onClick={() => setActiveView('qrcode')}><FaQrcode /> My QR Code</a>
-                    <a href="#" className={`nav-link ${activeView === 'earnings' ? 'active' : ''}`} onClick={() => setActiveView('earnings')}><FaWallet /> Earnings</a>
-                </nav>
+
+
+
 
                 <div className="header-actions">
-                    <div className="user-avatar-circle">
-                        {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'W'}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>{currentUser.displayName || "Worker"}</span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>Top Worker</span>
-                    </div>
+
                     <button className="icon-btn">
                         <FaBell />
                         <span className="badge">3</span>
                     </button>
+
                     <button
                         onClick={handleLogout}
                         style={{
                             background: 'transparent',
                             border: '1px solid rgba(255,255,255,0.2)',
-                            color: 'white',
+                            color: '#5e5e5b',
                             padding: '4px 12px',
                             borderRadius: '4px',
                             marginLeft: '10px',
@@ -105,7 +95,7 @@ const WorkerDashboard = () => {
 
                     <nav className="left-menu">
                         <a href="#" className={`menu-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}><FaBriefcase /> Dashboard</a>
-                        <a href="#" className="menu-item"><FaSearch /> Find Jobs</a>
+                        <a href="#" className={`menu-item ${activeView === 'findjobs' ? 'active' : ''}`} onClick={() => setActiveView('findjobs')}><FaSearch /> Find Jobs</a>
                         <a href="#" className={`menu-item ${activeView === 'activejobs' ? 'active' : ''}`} onClick={() => setActiveView('activejobs')}><FaBriefcase /> Active Jobs</a>
                         <a href="#" className={`menu-item ${activeView === 'myjobs' ? 'active' : ''}`} onClick={() => setActiveView('myjobs')}><FaUserCircle /> My Jobs</a>
                         <a href="#" className={`menu-item ${activeView === 'reviews' ? 'active' : ''}`} onClick={() => setActiveView('reviews')}><FaStar /> Reviews</a>
@@ -134,14 +124,13 @@ const WorkerDashboard = () => {
                             <FaCheckCircle className="verify-icon" /> Location-based hiring
                         </div>
                     </div>
-
                     <div className="lang-selector">
                         <FaGlobe /> English
                     </div>
                 </aside>
 
                 {/* Main Content Area (Center + Right) */}
-                <main className="main-content-area" style={{ display: ['earnings', 'myjobs', 'reviews', 'qrcode', 'activejobs'].includes(activeView) ? 'block' : 'grid', width: '100%' }}>
+                <main className="main-content-area" style={{ display: ['earnings', 'myjobs', 'reviews', 'qrcode', 'activejobs', 'findjobs'].includes(activeView) ? 'block' : 'grid', width: '100%' }}>
                     {activeView === 'earnings' && <WorkerEarnings />}
 
                     {activeView === 'activejobs' && <WorkerActiveJobs />}
@@ -149,6 +138,8 @@ const WorkerDashboard = () => {
                     {activeView === 'myjobs' && <WorkerMyJobs />}
 
                     {activeView === 'reviews' && <WorkerReviews />}
+
+                    {activeView === 'findjobs' && <WorkerFindJobs />}
 
                     {activeView === 'qrcode' && <WorkerQRCode />}
 
@@ -163,37 +154,46 @@ const WorkerDashboard = () => {
 
                                 {/* Stats Row */}
                                 <div className="stats-overview">
-                                    <div className="info-card">
+                                    <div
+                                        className="info-card card-clickable"
+                                        onClick={() => setActiveView('activejobs')}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyPress={(e) => e.key === 'Enter' && setActiveView('activejobs')}
+                                    >
                                         <div className="card-icon-box"><FaBriefcase /></div>
                                         <div className="card-text-content">
                                             <div className="card-title">Active Jobs</div>
                                             <div className="card-value">8</div>
                                         </div>
                                     </div>
-                                    <div className="info-card">
+                                    <div
+                                        className="info-card card-clickable"
+                                        onClick={() => setActiveView('earnings')}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyPress={(e) => e.key === 'Enter' && setActiveView('earnings')}
+                                    >
                                         <div className="card-icon-box"><FaWallet /></div>
                                         <div className="card-text-content">
                                             <div className="card-title">Earnings</div>
                                             <div className="card-value">₹12,500</div>
                                         </div>
                                     </div>
-                                    <div className="info-card">
+                                    <div
+                                        className="info-card card-clickable"
+                                        onClick={() => setActiveView('activejobs')}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyPress={(e) => e.key === 'Enter' && setActiveView('activejobs')}
+                                    >
                                         <div className="card-icon-box"><FaUsers /></div>
                                         <div className="card-text-content">
                                             <div className="card-title">Applicants</div>
                                             <div className="card-value">32 <span>New</span></div>
                                         </div>
                                     </div>
-                                    <div className="info-card" style={{ justifyContent: 'space-between' }}>
-                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            <div className="card-icon-box"><FaBell /></div>
-                                            <div className="card-text-content">
-                                                <div className="card-title">Notifications</div>
-                                                <div className="card-value">3 <span>New</span></div>
-                                            </div>
-                                        </div>
-                                        <button className="post-job-small-btn" style={{ backgroundColor: '#5d7e85', fontSize: '0.8rem' }}>+ Find Jobs</button>
-                                    </div>
+
                                 </div>
 
                                 {/* Map Section */}
@@ -336,7 +336,12 @@ const WorkerDashboard = () => {
                                                 <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>₹700</div>
                                             </div>
                                         </div>
-                                        <button className="view-btn" style={{ width: '100%', backgroundColor: '#5d7e85', marginTop: '8px' }}>View All {'>'}</button>
+                                        <button
+                                            className="view-all-button"
+                                            onClick={() => setActiveView('myjobs')}
+                                        >
+                                            View All {'>'}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -374,7 +379,12 @@ const WorkerDashboard = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <button className="view-btn" style={{ width: '100%', backgroundColor: '#5d7e85', marginTop: '8px' }}>View All {'>'}</button>
+                                        <button
+                                            className="view-all-button"
+                                            onClick={() => setActiveView('reviews')}
+                                        >
+                                            View All {'>'}
+                                        </button>
                                     </div>
                                 </div>
 

@@ -66,14 +66,20 @@ const WorkerActiveJobs = () => {
 
             {/* Filter Bar */}
             <div className="aj-filter-bar">
-                <button className="aj-filter-btn dark">All <FaChevronDown size={10} /></button>
-                <div className="aj-divider"></div>
-                <button className="aj-filter-btn">All Locations <FaChevronDown size={10} /></button>
-                <div className="aj-divider"></div>
-                <button className="aj-filter-btn">All Locations <FaChevronDown size={10} /></button>
-                <div className="aj-divider"></div>
-                <button className="aj-filter-btn">Sort by <span style={{ color: '#333', fontWeight: 600 }}>Newest</span> <FaChevronDown size={10} /></button>
-
+                <div className="aj-filter-group">
+                    <label>All</label>
+                    <FaChevronDown size={10} />
+                </div>
+                <div className="aj-separator"></div>
+                <div className="aj-filter-group">
+                    <label>All Locations</label>
+                    <FaChevronDown size={10} />
+                </div>
+                <div className="aj-separator"></div>
+                <div className="aj-filter-group">
+                    <label>Sort by <strong>Newest</strong></label>
+                    <FaChevronDown size={10} />
+                </div>
                 <div className="aj-search-wrapper">
                     <FaSearch color="#999" />
                     <input type="text" placeholder="Search" />

@@ -1,0 +1,251 @@
+/* Shortlisted Workers Page Styles */
+
+/* Filter Bar - Reusing general structure if possible, but distinct variations */
+.shortlist-filter-bar {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap;
+    border: 1px solid #EAEAEA;
+}
+
+.shortlist-list-header {
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-text);
+}
+
+.shortlist-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow-sm);
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 24px;
+    align-items: center;
+    margin-bottom: 16px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.shortlist-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: #f0f0f0;
+    transform: translateY(-2px);
+}
+
+/* 1. Profile */
+.shortlist-img-container {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #f5f5f5;
+}
+
+.shortlist-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 2. Main Info */
+.shortlist-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 280px;
+}
+
+.shortlist-name {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary-text);
+}
+
+.shortlist-role {
+    font-size: 0.95rem;
+    color: var(--secondary-text);
+}
+
+.shortlist-location {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 4px;
+}
+
+/* 3. Details (Rating, Wage, Skills) */
+.shortlist-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 250px;
+}
+
+.shortlist-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: var(--primary-text);
+}
+
+.stars-gold {
+    color: #F4B400;
+    letter-spacing: 1px;
+}
+
+.shortlist-exp-wage {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.95rem;
+    color: var(--primary-text);
+}
+
+.shortlist-skills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.skill-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Color variations for badges */
+.skill-badge.orange {
+    background-color: #FFF3E0;
+    color: #E65100;
+}
+
+.skill-badge.blue {
+    background-color: #E3F2FD;
+    color: #1565C0;
+}
+
+.skill-badge.green {
+    background-color: #E8F5E9;
+    color: #2E7D32;
+}
+
+.skill-badge.purple {
+    background-color: #F3E5F5;
+    color: #7B1FA2;
+}
+
+
+/* 4. Actions */
+.shortlist-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-action {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-assign {
+    background-color: var(--accent-orange);
+    color: white;
+}
+
+.btn-assign:hover {
+    background-color: #c57645;
+}
+
+.btn-remove {
+    background-color: #FEECE5;
+    /* Light peach/orange */
+    color: var(--accent-orange);
+}
+
+.btn-remove:hover {
+    background-color: #FDDCCF;
+}
+
+.btn-contact {
+    background-color: #F3F4F6;
+    color: #4B5563;
+    border: 1px solid #E5E7EB;
+}
+
+.btn-contact:hover {
+    background-color: #E5E7EB;
+}
+
+.icon-phone-call {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #F0F9FF;
+    /* Light Blue */
+    color: #0284C7;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: background 0.2s;
+}
+
+.icon-phone-call:hover {
+    background-color: #E0F2FE;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+    .shortlist-card {
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+            "img info"
+            "details details"
+            "actions actions";
+        gap: 16px;
+    }
+
+    .shortlist-img-container {
+        grid-area: img;
+    }
+
+    .shortlist-info {
+        grid-area: info;
+    }
+
+    .shortlist-details {
+        grid-area: details;
+    }
+
+    .shortlist-actions {
+        grid-area: actions;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .icon-phone-call {
+        margin-left: auto;
+    }
+}
