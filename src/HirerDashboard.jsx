@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { DB } from './lib/db';
 import PostJobModal from './components/PostJobModal';
@@ -24,6 +24,14 @@ import {
 const HirerDashboard = () => {
     const { currentUser, userRole, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const isPostJobPage = location.pathname === '/hire-dashboard/post-job';
+    const isFindWorkersPage = location.pathname === '/hire-dashboard/find-workers';
+    const isShortlistedPage = location.pathname === '/hire-dashboard/shortlisted-workers';
+    const isMessagesPage = location.pathname === '/hire-dashboard/messages';
+    const isNotificationsPage = location.pathname === '/hire-dashboard/notifications';
+    const isReportsPage = location.pathname === '/hire-dashboard/reports';
     const [isPostJobOpen, setIsPostJobOpen] = useState(false);
     const [stats, setStats] = useState({
         ongoing: 0,
@@ -297,68 +305,69 @@ const HirerDashboard = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Worker Availability Heatmap */}
-                            <div className="map-section-container">
-                                <div className="section-header">
-                                    <div className="section-title">
-                                        <Search size={18} /> Worker Availability Heatmap
-                                    </div>
-                                    <div className="section-actions">
-                                        <RefreshCw size={16} className="action-icon" />
-                                        <Settings size={16} className="action-icon" />
-                                    </div>
+                        {/* Worker Availability Heatmap */}
+                        <div className="map-section-container">
+                            <div className="section-header">
+                                <div className="section-title">
+                                    <Search size={18} /> Worker Availability Heatmap
                                 </div>
-
-                                <div className="map-wrapper">
-                                    {/* Placeholder for Leaflet Map */}
-                                    <div className="map-placeholder-bg">
-                                        <div className="map-landmark" style={{ top: '30%', left: '40%' }}>📍 Hotel Aga Khan Palace</div>
-                                        <div className="map-landmark" style={{ top: '60%', left: '20%' }}>📍 Sun-n-Sand</div>
-                                        <div className="map-landmark" style={{ top: '50%', left: '70%' }}>📍 Mundhwa</div>
-                                    </div>
-
-                                    <div className="map-controls">
-                                        <button className="map-btn">+</button>
-                                        <button className="map-btn">-</button>
-                                    </div>
-
-                                    <div className="map-legend-overlay">
-                                        <div className="legend-item"><span className="dot low"></span> Low</div>
-                                        <div className="legend-item"><span className="dot medium"></span> Medium</div>
-                                        <div className="legend-item"><span className="dot high"></span> High</div>
-                                    </div>
+                                <div className="section-actions">
+                                    <RefreshCw size={16} className="action-icon" />
+                                    <Settings size={16} className="action-icon" />
                                 </div>
                             </div>
-                        </main>
 
-                        {/* RIGHT SIDEBAR (Scrollable) */}
-                        <aside className="right-sidebar-scrollable">
-                            <h3 className="right-sidebar-title">Recent Hires</h3>
-                            <div className="recent-hires-list">
-                                {recentHires.map(worker => (
-                                    <div className="worker-card-compact" key={worker.id}>
-                                        <div className="worker-card-top">
-                                            <img src={worker.pic} alt={worker.name} className="worker-avatar-small" />
-                                            <div className="worker-info-compact">
-                                                <h4>{worker.name}</h4>
-                                                <div className="worker-role">{worker.role} <span className="star">⭐</span></div>
-                                                <div className="worker-phone">{worker.phone}</div>
-                                            </div>
-                                            <button className="view-profile-btn">View Profile</button>
-                                        </div>
-                                        <div className="worker-card-bottom">
-                                            <a href="#" className="contact-link">• Contact</a>
-                                        </div>
-                                    </div>
-                                ))}
+                            <div className="map-wrapper">
+                                {/* Placeholder for Leaflet Map */}
+                                <div className="map-placeholder-bg">
+                                    <div className="map-landmark" style={{ top: '30%', left: '40%' }}>📍 Hotel Aga Khan Palace</div>
+                                    <div className="map-landmark" style={{ top: '60%', left: '20%' }}>📍 Sun-n-Sand</div>
+                                    <div className="map-landmark" style={{ top: '50%', left: '70%' }}>📍 Mundhwa</div>
+                                </div>
+
+                                <div className="map-controls">
+                                    <button className="map-btn">+</button>
+                                    <button className="map-btn">-</button>
+                                </div>
+
+                                <div className="map-legend-overlay">
+                                    <div className="legend-item"><span className="dot low"></span> Low</div>
+                                    <div className="legend-item"><span className="dot medium"></span> Medium</div>
+                                    <div className="legend-item"><span className="dot high"></span> High</div>
+                                </div>
                             </div>
-                        </aside>
-                    </>
-                )}
+                        </div>
+                    </div>
+                </main>
 
+                {/* RIGHT SIDEBAR (Scrollable) */}
+                <aside className="right-sidebar-scrollable">
+                    <h3 className="right-sidebar-title">Recent Hires</h3>
+                    <div className="recent-hires-list">
+                        {recentHires.map(worker => (
+                            <div className="worker-card-compact" key={worker.id}>
+                                <div className="worker-card-top">
+                                    <img src={worker.pic} alt={worker.name} className="worker-avatar-small" />
+                                    <div className="worker-info-compact">
+                                        <h4>{worker.name}</h4>
+                                        <div className="worker-role">{worker.role} <span className="star">⭐</span></div>
+                                        <div className="worker-phone">{worker.phone}</div>
+                                    </div>
+                                    <button className="view-profile-btn">View Profile</button>
+                                </div>
+                                <div className="worker-card-bottom">
+                                    <a href="#" className="contact-link">• Contact</a>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </aside>
             </div>
+
         </div>
+
     );
 };
 
