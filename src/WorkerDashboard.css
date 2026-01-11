@@ -1842,25 +1842,3 @@ body {
         grid-template-columns: 1fr;
     }
 }
-
-/* View All Button from User Request */
-.view-all-button {
-    background-color: #5a8a8f;
-    /* Teal/blue-green color */
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    border: none;
-    font-size: 16px;
-    font-weight: 500;
-    width: 100%;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-top: 8px;
-    display: block;
-}
-
-.view-all-button:hover {
-    background-color: #4a7278;
-    /* Slightly darker on hover */
-}

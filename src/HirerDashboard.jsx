@@ -1,12 +1,8 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import PostJob from './PostJob';
-import Applicants from './Applicants';
-import Messages from './Messages';
-import ShortlistedWorkers from './ShortlistedWorkers';
-import Notifications from './Notifications';
-import Reports from './Reports';
+import { DB } from './lib/db';
+import PostJobModal from './components/PostJobModal';
 import './HirerDashboard.css';
 import {
     LayoutDashboard,
@@ -28,15 +24,11 @@ import {
 const HirerDashboard = () => {
     const { currentUser, userRole, logout } = useAuth();
     const navigate = useNavigate();
-    const location = useLocation();
-
-    // Route checks
-    const isPostJobPage = location.pathname.includes('/post-job');
-    const isFindWorkersPage = location.pathname.includes('/find-workers');
-    const isMessagesPage = location.pathname.includes('/messages');
-    const isShortlistedPage = location.pathname.includes('/shortlisted-workers');
-    const isNotificationsPage = location.pathname.includes('/notifications');
-    const isReportsPage = location.pathname.includes('/reports');
+    const [isPostJobOpen, setIsPostJobOpen] = useState(false);
+    const [stats, setStats] = useState({
+        ongoing: 0,
+        applicants: 0 // Placeholder as we don't have applicant logic yet
+    });
 
     useEffect(() => {
         if (!currentUser) {
@@ -45,6 +37,22 @@ const HirerDashboard = () => {
             navigate('/worker-dashboard');
         }
     }, [currentUser, userRole, navigate]);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            if (currentUser?.uid) {
+                try {
+                    const jobs = await DB.jobs.getByHirer(currentUser.uid);
+                    // Filter for open or in_progress jobs
+                    const ongoing = jobs.filter(j => ['open', 'in_progress'].includes(j.status)).length;
+                    setStats(prev => ({ ...prev, ongoing }));
+                } catch (error) {
+                    console.error("Error fetching stats:", error);
+                }
+            }
+        };
+        fetchStats();
+    }, [currentUser]);
 
     const handleLogout = async () => {
         try {
@@ -77,7 +85,23 @@ const HirerDashboard = () => {
                     <span>Digital Naka</span>
                 </div>
 
-
+                <nav className="top-nav">
+                    <a href="#" className="nav-link active">
+                        <LayoutDashboard size={18} /> Dashboard
+                    </a>
+                    <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); setIsPostJobOpen(true); }}>
+                        Post Job
+                    </a>
+                    <a href="#" className="nav-link">
+                        Find Workers
+                    </a>
+                    <a href="#" className="nav-link">
+                        Messages
+                    </a>
+                    <a href="#" className="nav-link">
+                        Reports
+                    </a>
+                </nav>
 
                 <div className="header-actions">
                     <button
@@ -168,40 +192,69 @@ const HirerDashboard = () => {
                     </nav>
                 </aside>
 
-                {isPostJobPage ? (
-                    <PostJob />
-                ) : isFindWorkersPage ? (
-                    <Applicants />
-                ) : isMessagesPage ? (
-                    <Messages />
-                ) : isShortlistedPage ? (
-                    <ShortlistedWorkers />
-                ) : isNotificationsPage ? (
-                    <Notifications />
-                ) : isReportsPage ? (
-                    <Reports />
-                ) : (
-                    <>
-                        {/* MAIN CONTENT AREA (Scrollable) */}
-                        <main className="center-content-scrollable">
-                            <div className="welcome-banner">
-                                <h1>Hirer Dashboard</h1>
-                                <p>Welcome, <strong>{currentUser.displayName || "Sunidhi Verma"}!</strong> Find & hire daily-wage workers instantly.</p>
+                {/* Right Content Area (Center + Right Panel) */}
+                <main className="main-content-area">
+                    {/* CENTER COLUMN */}
+                    <div className="dashboard-center-col">
+                        <div className="welcome-section">
+                            <h1>Hirer Dashboard</h1>
+                            <p>Welcome, <strong>{currentUser.displayName || "Hirer"}!</strong> Find & hire daily-wage workers instantly.</p>
+                        </div>
+
+                        {/* Stats Overview */}
+                        <div className="stats-overview">
+                            <div className="info-card">
+                                <div className="card-icon-box" style={{ background: '#F8E8D8', color: '#D98347' }}>
+                                    <Briefcase size={24} />
+                                </div>
+                                <div className="card-text-content">
+                                    <div className="card-title">Ongoing Jobs</div>
+                                    <div className="card-value">{stats.ongoing}</div>
+                                </div>
                             </div>
 
-                            {/* Stats Row */}
-                            <div className="stats-row">
-                                <div
-                                    className="stat-card clickable"
-                                    onClick={() => navigate('/hire-dashboard/post-job')}
-                                    role="button"
-                                    tabIndex={0}
-                                    onKeyPress={(e) => e.key === 'Enter' && navigate('/hire-dashboard/post-job')}
-                                >
-                                    <div className="stat-icon-circle tan"><Briefcase size={24} /></div>
-                                    <div className="stat-info">
-                                        <div className="stat-label">Ongoing Jobs</div>
-                                        <div className="stat-value">5</div>
+                            <div className="info-card">
+                                <div className="card-icon-box" style={{ background: '#F8E8D8', color: '#D98347' }}>
+                                    <Users size={24} />
+                                </div>
+                                <div className="card-text-content">
+                                    <div className="card-title">Applicants</div>
+                                    <div className="card-value">23 <span>New</span></div>
+                                </div>
+                            </div>
+
+                            <div className="info-card">
+                                <div className="card-icon-box" style={{ background: '#F8E8D8', color: '#D98347' }}>
+                                    <Star size={24} />
+                                </div>
+                                <div className="card-text-content">
+                                    <div className="card-title">Shortlisted Workers</div>
+                                    <div className="card-value">7</div>
+                                </div>
+                            </div>
+
+                            <div className="info-card">
+                                <div className="card-icon-box" style={{ background: '#F8E8D8', color: '#D98347' }}>
+                                    <Bell size={24} />
+                                </div>
+                                <div className="card-text-content">
+                                    <div className="card-title">Notifications</div>
+                                    <div className="card-value">1 <span>New</span></div>
+                                </div>
+                                <button className="post-job-small-btn" onClick={() => setIsPostJobOpen(true)}><Plus size={16} /> Post Job</button>
+                            </div>
+                        </div>
+
+                        <PostJobModal isOpen={isPostJobOpen} onClose={() => setIsPostJobOpen(false)} />
+
+                        {/* Map & Side Panel */}
+                        <div className="middle-grid">
+                            <div className="map-container">
+                                <div className="section-heading-row">
+                                    <div style={{ display: 'flex', alignItems: 'center' }}><Search size={18} style={{ marginRight: 8 }} /> Worker Availability Heatmap</div>
+                                    <div className="map-icons-right">
+                                        <RefreshCw size={16} />
+                                        <Settings size={16} />
                                     </div>
                                 </div>
                                 <div
