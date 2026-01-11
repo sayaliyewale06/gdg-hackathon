@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, googleProvider, db } from '../lib/firebase';
+import { auth, googleProvider } from '../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { DB } from '../lib/db';
 
 const AuthContext = createContext();
 
@@ -22,19 +22,17 @@ export const AuthProvider = ({ children }) => {
             const user = result.user;
             console.log("Google Auth Success, User UID:", user.uid);
 
-            // Create or update user profile in Firestore with role
-            const userRef = doc(db, 'users', user.uid);
+            // Create or update user profile in Firestore via Type-Safe DB Service
             const userData = {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName,
                 photoURL: user.photoURL,
-                role: role,
-                lastLogin: new Date().toISOString()
+                role: role
             };
 
-            console.log("Attempting to write to Firestore:", userData);
-            await setDoc(userRef, userData, { merge: true });
+            console.log("Attempting to write to Firestore via DB service:", userData);
+            await DB.users.create(user.uid, userData);
             console.log("Firestore write successful!");
 
             setUserRole(role);
@@ -60,8 +58,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateUserRole = async (role) => {
         if (currentUser) {
-            const userRef = doc(db, 'users', currentUser.uid);
-            await setDoc(userRef, { role }, { merge: true });
+            await DB.users.update(currentUser.uid, { role });
             setUserRole(role);
         }
     };
@@ -73,16 +70,14 @@ export const AuthProvider = ({ children }) => {
             setError(null);
 
             if (user) {
-                // Fetch user role from Firestore
+                // Fetch user role from Firestore via DB service
                 try {
-                    const userRef = doc(db, 'users', user.uid);
                     console.log("Fetching user role for UID:", user.uid);
-                    const userDoc = await getDoc(userRef);
+                    const userData = await DB.users.get(user.uid);
 
-                    if (userDoc.exists()) {
-                        const data = userDoc.data();
-                        console.log("User Data Found:", data);
-                        setUserRole(data.role);
+                    if (userData) {
+                        console.log("User Data Found:", userData);
+                        setUserRole(userData.role);
                     } else {
                         console.log("No user document found in Firestore for this UID.");
                     }

@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { DB } from './lib/db';
+import PostJobModal from './components/PostJobModal';
 import './HirerDashboard.css';
 import {
     LayoutDashboard,
@@ -23,6 +25,11 @@ import {
 const HirerDashboard = () => {
     const { currentUser, userRole, logout } = useAuth();
     const navigate = useNavigate();
+    const [isPostJobOpen, setIsPostJobOpen] = useState(false);
+    const [stats, setStats] = useState({
+        ongoing: 0,
+        applicants: 0 // Placeholder as we don't have applicant logic yet
+    });
 
     useEffect(() => {
         // Redirect if not authenticated or wrong role
@@ -32,6 +39,22 @@ const HirerDashboard = () => {
             navigate('/worker-dashboard');
         }
     }, [currentUser, userRole, navigate]);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            if (currentUser?.uid) {
+                try {
+                    const jobs = await DB.jobs.getByHirer(currentUser.uid);
+                    // Filter for open or in_progress jobs
+                    const ongoing = jobs.filter(j => ['open', 'in_progress'].includes(j.status)).length;
+                    setStats(prev => ({ ...prev, ongoing }));
+                } catch (error) {
+                    console.error("Error fetching stats:", error);
+                }
+            }
+        };
+        fetchStats();
+    }, [currentUser]);
 
     const handleLogout = async () => {
         try {
@@ -60,7 +83,7 @@ const HirerDashboard = () => {
                     <a href="#" className="nav-link active">
                         <LayoutDashboard size={18} /> Dashboard
                     </a>
-                    <a href="#" className="nav-link">
+                    <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); setIsPostJobOpen(true); }}>
                         Post Job
                     </a>
                     <a href="#" className="nav-link">
@@ -182,7 +205,7 @@ const HirerDashboard = () => {
                                 </div>
                                 <div className="card-text-content">
                                     <div className="card-title">Ongoing Jobs</div>
-                                    <div className="card-value">5</div>
+                                    <div className="card-value">{stats.ongoing}</div>
                                 </div>
                             </div>
 
@@ -214,9 +237,11 @@ const HirerDashboard = () => {
                                     <div className="card-title">Notifications</div>
                                     <div className="card-value">1 <span>New</span></div>
                                 </div>
-                                <button className="post-job-small-btn"><Plus size={16} /> Post Job</button>
+                                <button className="post-job-small-btn" onClick={() => setIsPostJobOpen(true)}><Plus size={16} /> Post Job</button>
                             </div>
                         </div>
+
+                        <PostJobModal isOpen={isPostJobOpen} onClose={() => setIsPostJobOpen(false)} />
 
                         {/* Map & Side Panel */}
                         <div className="middle-grid">
