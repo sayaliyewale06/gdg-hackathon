@@ -1,6 +1,12 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import PostJob from './PostJob';
+import Applicants from './Applicants';
+import Messages from './Messages';
+import ShortlistedWorkers from './ShortlistedWorkers';
+import Notifications from './Notifications';
+import Reports from './Reports';
 import './HirerDashboard.css';
 import {
     LayoutDashboard,
@@ -16,16 +22,23 @@ import {
     CheckCircle,
     Globe,
     RefreshCw,
-    Settings,
-    ArrowUpRight
+    Settings
 } from 'lucide-react';
 
 const HirerDashboard = () => {
     const { currentUser, userRole, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Route checks
+    const isPostJobPage = location.pathname.includes('/post-job');
+    const isFindWorkersPage = location.pathname.includes('/find-workers');
+    const isMessagesPage = location.pathname.includes('/messages');
+    const isShortlistedPage = location.pathname.includes('/shortlisted-workers');
+    const isNotificationsPage = location.pathname.includes('/notifications');
+    const isReportsPage = location.pathname.includes('/reports');
 
     useEffect(() => {
-        // Redirect if not authenticated or wrong role
         if (!currentUser) {
             navigate('/');
         } else if (userRole && userRole !== 'hire') {
@@ -42,364 +55,255 @@ const HirerDashboard = () => {
         }
     };
 
-    if (!currentUser) {
-        return <div style={{ padding: '20px', color: 'white', textAlign: 'center' }}>Loading...</div>;
-    }
+    if (!currentUser) return <div className="loading-screen">Loading...</div>;
+
+    // Dummy data for Recent Hires (Right Sidebar)
+    const recentHires = [
+        { id: 1, name: 'Ramesh Yadav', role: 'Electrician', rating: 4.5, phone: '+91 9067 65****', pic: 'https://randomuser.me/api/portraits/men/32.jpg' },
+        { id: 2, name: 'Suresh Kumar', role: 'Plumber', rating: 5.0, phone: '+91 9125 45****', pic: 'https://randomuser.me/api/portraits/men/45.jpg' },
+        { id: 3, name: 'Mohan Das', role: 'Electrician', rating: 4.8, phone: '+91 9665 32****', pic: 'https://randomuser.me/api/portraits/men/62.jpg' },
+        { id: 4, name: 'Vinod Patel', role: 'Mason', rating: 4.5, phone: '+91 9876 54****', pic: 'https://randomuser.me/api/portraits/men/11.jpg' },
+        { id: 5, name: 'Raju Singh', role: 'Painter', rating: 4.2, phone: '+91 8888 12****', pic: 'https://randomuser.me/api/portraits/men/22.jpg' },
+        { id: 6, name: 'Anita Desai', role: 'Cleaner', rating: 4.9, phone: '+91 7777 99****', pic: 'https://randomuser.me/api/portraits/women/44.jpg' },
+    ];
 
     return (
         <div className="hirer-dashboard">
 
-            {/* Top Header */}
+            {/* 1. FIXED HEADER */}
             <header className="main-header">
-                <div className="brand">
+                <div className="brand" onClick={() => navigate('/hire-dashboard')} style={{ cursor: 'pointer' }}>
                     <MapPin className="brand-icon" size={28} />
                     <span>Digital Naka</span>
                 </div>
 
-                <nav className="top-nav">
-                    <a href="#" className="nav-link active">
-                        <LayoutDashboard size={18} /> Dashboard
-                    </a>
-                    <a href="#" className="nav-link">
-                        Post Job
-                    </a>
-                    <a href="#" className="nav-link">
-                        Find Workers
-                    </a>
-                    <a href="#" className="nav-link">
-                        Messages
-                    </a>
-                    <a href="#" className="nav-link">
-                        Reports
-                    </a>
-                </nav>
+
 
                 <div className="header-actions">
-                    <button className="icon-btn">
+                    <button
+                        className={`icon-btn ${isNotificationsPage ? 'active' : ''}`}
+                        onClick={() => navigate('/hire-dashboard/notifications')}
+                    >
                         <Bell size={20} />
-                        <span className="badge">1</span>
+                        {/* Mock unread count, could be dynamic based on Notifications state if lifted up */}
+                        <span className="badge">3</span>
                     </button>
                     <div className="user-avatar-circle">
-                        {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'U'}
+                        {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'S'}
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        style={{
-                            background: 'transparent',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            color: 'white',
-                            padding: '4px 12px',
-                            borderRadius: '4px',
-                            marginLeft: '10px',
-                            cursor: 'pointer'
-                        }}
-                    >
+                    <button onClick={handleLogout} className="logout-btn">
                         Logout
                     </button>
                 </div>
             </header>
 
-            {/* Main Grid Layout */}
-            <div className="dashboard-body">
+            {/* 2. BODY GRID (Left Fixed | Center Scroll | Right Fixed) */}
+            <div className="dashboard-grid-container">
 
-                {/* Left Panel */}
-                <aside className="left-panel">
-                    {/* Profile Card */}
-                    <div className="profile-card">
-                        <div className="profile-image-wrapper">
+                {/* LEFT SIDEBAR (Fixed) */}
+                <aside className="left-sidebar-fixed">
+                    <div className="profile-section">
+                        <div className="profile-pic-container">
                             <img
                                 src={currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
-                                alt={currentUser.displayName || "Hirer"}
-                                className="profile-img"
+                                alt="Profile"
+                                className="profile-img-large"
                             />
                         </div>
-                        <div className="profile-details">
-                            <h2>{currentUser.displayName || "Hirer"}</h2>
-                            <div className="role">Employer</div>
-                            <div className="phone">{currentUser.email || "+91 9876543210"}</div>
-                        </div>
+                        <h2>{currentUser.displayName || "Sunidhi Verma"}</h2>
+                        <div className="user-role-label">Employer</div>
+                        <div className="user-email">{currentUser.email || "vermasunidhi18@gmail.com"}</div>
                     </div>
 
-                    {/* Left Menu (Duplicative visually but part of the design) */}
-                    <nav className="left-menu">
-                        <a href="#" className="menu-item active">
+                    <nav className="left-nav-menu">
+                        <a
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard'); }}
+                            className={`left-nav-item ${!isPostJobPage && !isFindWorkersPage && !isMessagesPage && !isShortlistedPage && !isNotificationsPage && !isReportsPage ? 'active' : ''}`}
+                        >
                             <LayoutDashboard size={18} /> Dashboard
                         </a>
-                        <a href="#" className="menu-item">
-                            <Briefcase size={18} /> Post Job
+                        <a
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/post-job'); }}
+                            className={`left-nav-item ${isPostJobPage ? 'active' : ''}`}
+                        >
+                            <Plus size={18} /> Post Job
                         </a>
-                        <a href="#" className="menu-item">
+                        <a
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/find-workers'); }}
+                            className={`left-nav-item ${isFindWorkersPage ? 'active' : ''}`}
+                        >
                             <Users size={18} /> Find Workers
                         </a>
-                        <a href="#" className="menu-item">
+                        <a
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/shortlisted-workers'); }}
+                            className={`left-nav-item ${isShortlistedPage ? 'active' : ''}`}
+                        >
+                            <Briefcase size={18} /> Shortlisted
+                        </a>
+                        <a
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/messages'); }}
+                            className={`left-nav-item ${isMessagesPage ? 'active' : ''}`}
+                        >
                             <MessageSquare size={18} /> Messages
                         </a>
-                        <a href="#" className="menu-item">
+                        <a
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/notifications'); }}
+                            className={`left-nav-item ${isNotificationsPage ? 'active' : ''}`}
+                        >
+                            <Bell size={18} /> Notifications
+                        </a>
+                        <a
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/reports'); }}
+                            className={`left-nav-item ${isReportsPage ? 'active' : ''}`}
+                        >
                             <FileText size={18} /> Reports
                         </a>
                     </nav>
-
-                    {/* Stats & Actions */}
-                    <div className="sidebar-stats-card">
-                        <div className="sidebar-stat-label">Total Workers Available</div>
-                        <div className="sidebar-stat-number">1,245 <span className="sidebar-stat-trend">▼1</span></div>
-                        <div className="sidebar-stat-2"><span className="highlight-stat">78</span> Recent Hires Today</div>
-                    </div>
-
-                    <button className="sidebar-action-btn">Find Workers</button>
-
-                    <div className="verification-list">
-                        <div className="verify-item">
-                            <CheckCircle size={16} className="verify-icon" /> Aadhaar / Phone verified workers
-                        </div>
-                        <div className="verify-item">
-                            <CheckCircle size={16} className="verify-icon" /> Rated by past contractors
-                        </div>
-                        <div className="verify-item">
-                            <CheckCircle size={16} className="verify-icon" /> Location-based hiring
-                        </div>
-                    </div>
-
-                    <div className="lang-selector">
-                        <span style={{ fontSize: '1.2rem' }}>🇺🇸</span> English ▼
-                    </div>
                 </aside>
 
-                {/* Right Content Area (Center + Right Panel) */}
-                <main className="main-content-area">
-                    {/* CENTER COLUMN */}
-                    <div className="dashboard-center-col">
-                        <div className="welcome-section">
-                            <h1>Hirer Dashboard</h1>
-                            <p>Welcome, <strong>{currentUser.displayName || "Hirer"}!</strong> Find & hire daily-wage workers instantly.</p>
-                        </div>
-
-                        {/* Stats Overview */}
-                        <div className="stats-overview">
-                            <div className="info-card">
-                                <div className="card-icon-box" style={{ background: '#F8E8D8', color: '#D98347' }}>
-                                    <Briefcase size={24} />
-                                </div>
-                                <div className="card-text-content">
-                                    <div className="card-title">Ongoing Jobs</div>
-                                    <div className="card-value">5</div>
-                                </div>
+                {isPostJobPage ? (
+                    <PostJob />
+                ) : isFindWorkersPage ? (
+                    <Applicants />
+                ) : isMessagesPage ? (
+                    <Messages />
+                ) : isShortlistedPage ? (
+                    <ShortlistedWorkers />
+                ) : isNotificationsPage ? (
+                    <Notifications />
+                ) : isReportsPage ? (
+                    <Reports />
+                ) : (
+                    <>
+                        {/* MAIN CONTENT AREA (Scrollable) */}
+                        <main className="center-content-scrollable">
+                            <div className="welcome-banner">
+                                <h1>Hirer Dashboard</h1>
+                                <p>Welcome, <strong>{currentUser.displayName || "Sunidhi Verma"}!</strong> Find & hire daily-wage workers instantly.</p>
                             </div>
 
-                            <div className="info-card">
-                                <div className="card-icon-box" style={{ background: '#F8E8D8', color: '#D98347' }}>
-                                    <Users size={24} />
-                                </div>
-                                <div className="card-text-content">
-                                    <div className="card-title">Applicants</div>
-                                    <div className="card-value">23 <span>New</span></div>
-                                </div>
-                            </div>
-
-                            <div className="info-card">
-                                <div className="card-icon-box" style={{ background: '#F8E8D8', color: '#D98347' }}>
-                                    <Star size={24} />
-                                </div>
-                                <div className="card-text-content">
-                                    <div className="card-title">Shortlisted Workers</div>
-                                    <div className="card-value">7</div>
-                                </div>
-                            </div>
-
-                            <div className="info-card">
-                                <div className="card-icon-box" style={{ background: '#F8E8D8', color: '#D98347' }}>
-                                    <Bell size={24} />
-                                </div>
-                                <div className="card-text-content">
-                                    <div className="card-title">Notifications</div>
-                                    <div className="card-value">1 <span>New</span></div>
-                                </div>
-                                <button className="post-job-small-btn"><Plus size={16} /> Post Job</button>
-                            </div>
-                        </div>
-
-                        {/* Map & Side Panel */}
-                        <div className="middle-grid">
-                            <div className="map-container">
-                                <div className="section-heading-row">
-                                    <div style={{ display: 'flex', alignItems: 'center' }}><Search size={18} style={{ marginRight: 8 }} /> Worker Availability Heatmap</div>
-                                    <div className="map-icons-right">
-                                        <RefreshCw size={16} />
-                                        <Settings size={16} />
+                            {/* Stats Row */}
+                            <div className="stats-row">
+                                <div
+                                    className="stat-card clickable"
+                                    onClick={() => navigate('/hire-dashboard/post-job')}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyPress={(e) => e.key === 'Enter' && navigate('/hire-dashboard/post-job')}
+                                >
+                                    <div className="stat-icon-circle tan"><Briefcase size={24} /></div>
+                                    <div className="stat-info">
+                                        <div className="stat-label">Ongoing Jobs</div>
+                                        <div className="stat-value">5</div>
                                     </div>
                                 </div>
-                                <div className="real-map-box">
-                                    {/* Map Placeholder Image */}
-                                    <img src="https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/73.8567,18.5204,12,0/800x400?access_token=YOUR_ACCESS_TOKEN" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.3) opacity(0.5)' }} alt="Map" />
-
-                                    <div className="map-controls-overlay">
-                                        <button className="map-ctrl-btn">+</button>
-                                        <div style={{ height: '1px', background: '#eee' }}></div>
-                                        <button className="map-ctrl-btn">-</button>
+                                <div
+                                    className="stat-card clickable"
+                                    onClick={() => navigate('/hire-dashboard/find-workers')}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyPress={(e) => e.key === 'Enter' && navigate('/hire-dashboard/find-workers')}
+                                >
+                                    <div className="stat-icon-circle tan"><Users size={24} /></div>
+                                    <div className="stat-info">
+                                        <div className="stat-label">Applicants</div>
+                                        <div className="stat-value">23 <span className="stat-new">New</span></div>
                                     </div>
-
-                                    <div className="map-legend">
-                                        <span style={{ display: 'flex', alignItems: 'center' }}><span className="legend-dot" style={{ background: '#A5D6A7' }}></span> Low</span>
-                                        <span style={{ display: 'flex', alignItems: 'center' }}><span className="legend-dot" style={{ background: '#FFE082' }}></span> Medium</span>
-                                        <span style={{ display: 'flex', alignItems: 'center' }}><span className="legend-dot" style={{ background: '#EF9A9A' }}></span> High</span>
+                                </div>
+                                <div
+                                    className="stat-card clickable"
+                                    onClick={() => navigate('/hire-dashboard/shortlisted-workers')}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyPress={(e) => e.key === 'Enter' && navigate('/hire-dashboard/shortlisted-workers')}
+                                >
+                                    <div className="stat-icon-circle tan"><Star size={24} /></div>
+                                    <div className="stat-info">
+                                        <div className="stat-label">Shortlisted Workers</div>
+                                        <div className="stat-value">7</div>
+                                    </div>
+                                </div>
+                                <div
+                                    className="stat-card clickable"
+                                    onClick={() => navigate('/hire-dashboard/notifications')}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyPress={(e) => e.key === 'Enter' && navigate('/hire-dashboard/notifications')}
+                                >
+                                    <div className="stat-icon-circle tan"><Bell size={24} /></div>
+                                    <div className="stat-info">
+                                        <div className="stat-label">Notifications</div>
+                                        <div className="stat-value">1 <span className="stat-new">New</span></div>
                                     </div>
                                 </div>
                             </div>
 
-                        </div>
-
-                        {/* Recent Hires Wide List */}
-                        <div className="recent-hires-container">
-                            <div className="section-heading-row">Recent Hires</div>
-                            <div className="hires-grid">
-                                <div className="hire-row-card">
-                                    <div className="worker-identity">
-                                        <img src="https://randomuser.me/api/portraits/men/32.jpg" className="worker-pic" alt="" />
-                                        <div className="worker-details">
-                                            <h4>Ramesh Yadav</h4>
-                                            <span>Construction Labor</span>
-                                        </div>
+                            {/* Worker Availability Heatmap */}
+                            <div className="map-section-container">
+                                <div className="section-header">
+                                    <div className="section-title">
+                                        <Search size={18} /> Worker Availability Heatmap
                                     </div>
-                                    <div className="worker-stars">★★★★☆ 4.5</div>
-                                    <div className="worker-contact-info">
-                                        <div>+91 9067 65***</div>
-                                        <div><MapPin size={12} /> Hinjawadi</div>
+                                    <div className="section-actions">
+                                        <RefreshCw size={16} className="action-icon" />
+                                        <Settings size={16} className="action-icon" />
                                     </div>
-                                    <button className="view-btn orange">View Profile</button>
                                 </div>
 
-                                <div className="hire-row-card">
-                                    <div className="worker-identity">
-                                        <img src="https://randomuser.me/api/portraits/men/45.jpg" className="worker-pic" alt="" />
-                                        <div className="worker-details">
-                                            <h4>Suresh Kumar</h4>
-                                            <span>Plumber</span>
-                                        </div>
+                                <div className="map-wrapper">
+                                    {/* Placeholder for Leaflet Map */}
+                                    <div className="map-placeholder-bg">
+                                        <div className="map-landmark" style={{ top: '30%', left: '40%' }}>📍 Hotel Aga Khan Palace</div>
+                                        <div className="map-landmark" style={{ top: '60%', left: '20%' }}>📍 Sun-n-Sand</div>
+                                        <div className="map-landmark" style={{ top: '50%', left: '70%' }}>📍 Mundhwa</div>
                                     </div>
-                                    <div className="worker-stars">★★★★★ 5</div>
-                                    <div className="worker-contact-info">
-                                        <div>+91 9125 45***</div>
-                                        <div><MapPin size={12} /> Wakad</div>
-                                    </div>
-                                    <button className="view-btn orange">View Profile</button>
-                                </div>
 
-                                <div className="hire-row-card">
-                                    <div className="worker-identity">
-                                        <img src="https://randomuser.me/api/portraits/men/62.jpg" className="worker-pic" alt="" />
-                                        <div className="worker-details">
-                                            <h4>Mohan Das</h4>
-                                            <span>Electrician</span>
-                                        </div>
+                                    <div className="map-controls">
+                                        <button className="map-btn">+</button>
+                                        <button className="map-btn">-</button>
                                     </div>
-                                    <div className="worker-stars">★★★★☆ 4.8</div>
-                                    <div className="worker-contact-info">
-                                        <div>+91 9845 32***</div>
-                                        <div><MapPin size={12} /> Shivajinagar</div>
-                                    </div>
-                                    <button className="view-btn orange">View Profile</button>
-                                </div>
 
-                                <div className="hire-row-card">
-                                    <div className="worker-identity">
-                                        <img src="https://randomuser.me/api/portraits/men/11.jpg" className="worker-pic" alt="" />
-                                        <div className="worker-details">
-                                            <h4>Vinod Patel</h4>
-                                            <span>Mason</span>
-                                        </div>
+                                    <div className="map-legend-overlay">
+                                        <div className="legend-item"><span className="dot low"></span> Low</div>
+                                        <div className="legend-item"><span className="dot medium"></span> Medium</div>
+                                        <div className="legend-item"><span className="dot high"></span> High</div>
                                     </div>
-                                    <div className="worker-stars">★★★★☆ 4.5</div>
-                                    <div className="worker-contact-info">
-                                        <div>+91 9876 54***</div>
-                                        <div><MapPin size={12} /> Baner</div>
-                                    </div>
-                                    <button className="view-btn orange">View Profile</button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </main>
 
-                    {/* Right Sidebar - Compact Recent Hires */}
-                    <aside className="right-dashboard-sidebar">
-                        <div className="compact-hires-section">
-                            <div className="section-heading-row">Recent Hires</div>
-
-                            <div className="compact-hires-list">
-                                {/* Card 1 */}
-                                <div className="compact-hire-card">
-                                    <div className="compact-card-header">
-                                        <img src="https://randomuser.me/api/portraits/men/32.jpg" className="compact-pic" alt="Ramesh" />
-                                        <div className="compact-info">
-                                            <h4>Ramesh Yadav</h4>
-                                            <div className="compact-role">Electrician <span className="gold-txt">★</span></div>
-                                            <div className="compact-phone">+91 9067 65****</div>
+                        {/* RIGHT SIDEBAR (Scrollable) */}
+                        <aside className="right-sidebar-scrollable">
+                            <h3 className="right-sidebar-title">Recent Hires</h3>
+                            <div className="recent-hires-list">
+                                {recentHires.map(worker => (
+                                    <div className="worker-card-compact" key={worker.id}>
+                                        <div className="worker-card-top">
+                                            <img src={worker.pic} alt={worker.name} className="worker-avatar-small" />
+                                            <div className="worker-info-compact">
+                                                <h4>{worker.name}</h4>
+                                                <div className="worker-role">{worker.role} <span className="star">⭐</span></div>
+                                                <div className="worker-phone">{worker.phone}</div>
+                                            </div>
+                                            <button className="view-profile-btn">View Profile</button>
                                         </div>
-                                        <button className="compact-view-btn">View Profile</button>
-                                    </div>
-                                    <div className="compact-card-footer">
-                                        <span className="dot-action">● Contact</span>
-                                    </div>
-                                </div>
-
-                                {/* Card 2 */}
-                                <div className="compact-hire-card">
-                                    <div className="compact-card-header">
-                                        <img src="https://randomuser.me/api/portraits/men/45.jpg" className="compact-pic" alt="Suresh" />
-                                        <div className="compact-info">
-                                            <h4>Suresh Kumar</h4>
-                                            <div className="compact-role">Plumber <span className="gold-txt">★</span></div>
-                                            <div className="compact-phone">+91 9125 45****</div>
+                                        <div className="worker-card-bottom">
+                                            <a href="#" className="contact-link">• Contact</a>
                                         </div>
-                                        <button className="compact-view-btn">View Profile</button>
                                     </div>
-                                    <div className="compact-card-footer">
-                                        <span className="dot-action">● Contact</span>
-                                    </div>
-                                </div>
-
-                                {/* Card 3 */}
-                                <div className="compact-hire-card">
-                                    <div className="compact-card-header">
-                                        <img src="https://randomuser.me/api/portraits/men/62.jpg" className="compact-pic" alt="Mohan" />
-                                        <div className="compact-info">
-                                            <h4>Mohan Das</h4>
-                                            <div className="compact-role">Electrician <span className="gold-txt">★</span></div>
-                                            <div className="compact-phone">+91 9665 32****</div>
-                                        </div>
-
-                                        <button className="compact-view-btn">View Profile</button>
-                                    </div>
-                                    <div className="compact-card-footer">
-                                        <span className="dot-action">● Contact</span>
-                                    </div>
-                                </div>
-
-                                {/* Card 4 */}
-                                <div className="compact-hire-card">
-                                    <div className="compact-card-header">
-                                        <img src="https://randomuser.me/api/portraits/men/11.jpg" className="compact-pic" alt="Vinod" />
-                                        <div className="compact-info">
-                                            <h4>Vinod Patel</h4>
-                                            <div className="compact-role">Painter <span className="gold-txt">★</span></div>
-                                            <div className="compact-phone">+91 9876 54****</div>
-                                        </div>
-                                        <button className="compact-view-btn">View Profile</button>
-                                    </div>
-                                    <div className="compact-card-footer">
-                                        <span className="dot-action">● Contact</span>
-                                    </div>
-                                </div>
-
+                                ))}
                             </div>
-                        </div>
+                        </aside>
+                    </>
+                )}
 
-                        <div className="lang-selector-right">
-                            <span style={{ fontSize: '1.2rem' }}>🌺</span> English ▼ &nbsp; <span className="lang-text">Language</span>
-                        </div>
-
-                    </aside>
-
-                </main>
             </div>
         </div>
     );

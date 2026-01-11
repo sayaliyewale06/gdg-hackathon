@@ -136,9 +136,9 @@ const WorkerMyJobs = () => {
             {/* Job Rows */}
             {jobs.map((job, index) => (
                 <div className="job-row" key={index}>
-                    <div className="jr-date">{job.date}</div>
-
-                    <div className="jr-job-info">
+                    {/* LEFT SECTION: Date, Icon, Details */}
+                    <div className="job-section-left">
+                        <div className="jr-date">{job.date}</div>
                         <div className="jr-icon-box">
                             {job.title.includes('Masonry') ? <FaHardHat /> : job.icon}
                         </div>
@@ -150,17 +150,19 @@ const WorkerMyJobs = () => {
                         </div>
                     </div>
 
-                    <div className="jr-earnings">
+                    {/* CENTER SECTION: Price, Earned Badge */}
+                    <div className="job-section-center">
                         <span className="jr-amount">{job.amount}</span>
                         <div className="status-badge status-completed">
                             <span>{job.amount} Earned</span>
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: '#888', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <FaCheckCircle style={{ fontSize: '0.7rem' }} /> {job.status}
-                        </div>
                     </div>
 
-                    <div className="jr-employer">
+                    {/* RIGHT SECTION: Status, Profile, Message */}
+                    <div className="job-section-right">
+                        <div className="status-text">
+                            <FaCheckCircle style={{ fontSize: '0.8rem' }} /> {job.status}
+                        </div>
                         <div className="emp-profile">
                             <img src={job.img} alt={job.employer} />
                             <div className="emp-name">

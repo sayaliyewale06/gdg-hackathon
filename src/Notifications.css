@@ -1,0 +1,157 @@
+/* Notifications Page Styles */
+
+.notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.notification-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    position: relative;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.notification-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: #f0f0f0;
+}
+
+.notification-card.unread {
+    background-color: #FFF8F4;
+    /* Light peach for unread */
+    border-color: #FFE0B2;
+}
+
+.notification-icon-container {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: #F5F5F5;
+}
+
+.notification-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Specific icon styles */
+.icon-urgent {
+    background-color: #FFF3E0;
+    color: #E65100;
+}
+
+.icon-completed {
+    background-color: #E8F5E9;
+    color: #2E7D32;
+}
+
+.icon-new-applicant {
+    background-color: #E3F2FD;
+    color: #1565C0;
+}
+
+.notification-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.notification-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.notification-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification-time {
+    font-size: 0.85rem;
+    color: var(--secondary-text);
+    white-space: nowrap;
+}
+
+.notification-description {
+    font-size: 0.95rem;
+    color: #555;
+    margin: 0;
+    max-width: 80%;
+}
+
+.badge-urgent {
+    background-color: #FFF3E0;
+    color: #E65100;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.notification-actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-mark-read {
+    background: transparent;
+    border: 1px solid #E5E0D8;
+    color: var(--secondary-text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-mark-read:hover {
+    background: #FAF9F6;
+    color: var(--primary-text);
+    border-color: #D6D6D6;
+}
+
+/* Three dot menu */
+.menu-trigger {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    padding: 4px;
+    margin-left: 8px;
+}
+
+.menu-trigger:hover {
+    color: var(--primary-text);
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import './WorkerDashboard.css';
-import { FaChevronDown, FaSearch, FaBriefcase, FaTruck, FaBolt, FaCar, FaMapMarkerAlt, FaStar, FaUserFriends, FaClock, FaCheckCircle } from 'react-icons/fa';
+import { FaChevronDown, FaSearch, FaBriefcase, FaTruck, FaBolt, FaCar, FaMapMarkerAlt, FaStar, FaUserFriends, FaClock, FaCheckCircle, FaInfoCircle } from 'react-icons/fa';
 
 const WorkerActiveJobs = () => {
 
@@ -93,14 +93,20 @@ const WorkerActiveJobs = () => {
 
             {/* Filter Bar */}
             <div className="aj-filter-bar">
-                <button className="aj-filter-btn dark">All <FaChevronDown size={10} /></button>
-                <div className="aj-divider"></div>
-                <button className="aj-filter-btn">All Locations <FaChevronDown size={10} /></button>
-                <div className="aj-divider"></div>
-                <button className="aj-filter-btn">All Locations <FaChevronDown size={10} /></button>
-                <div className="aj-divider"></div>
-                <button className="aj-filter-btn">Sort by <span style={{ color: '#333', fontWeight: 600 }}>Newest</span> <FaChevronDown size={10} /></button>
-
+                <div className="aj-filter-group">
+                    <label>All</label>
+                    <FaChevronDown size={10} />
+                </div>
+                <div className="aj-separator"></div>
+                <div className="aj-filter-group">
+                    <label>All Locations</label>
+                    <FaChevronDown size={10} />
+                </div>
+                <div className="aj-separator"></div>
+                <div className="aj-filter-group">
+                    <label>Sort by <strong>Newest</strong></label>
+                    <FaChevronDown size={10} />
+                </div>
                 <div className="aj-search-wrapper">
                     <FaSearch color="#999" />
                     <input type="text" placeholder="Search" />
@@ -111,64 +117,49 @@ const WorkerActiveJobs = () => {
             <div className="aj-jobs-list">
                 {jobs.map((job, idx) => (
                     <div className="aj-job-card" key={idx}>
-                        {/* Left: Icon & Title */}
-                        <div className="aj-job-main">
+                        <div className="aj-card-header">
                             <div className="aj-icon-box">
                                 {job.icon}
                             </div>
-                            <div className="aj-job-info">
-                                <h3 className="aj-title">
-                                    {job.title} {job.isUrgent && <span className="aj-urgent-tag">Urgent</span>}
-                                </h3>
+                            <div className="aj-header-info">
+                                <h3 className="aj-title">{job.title}</h3>
                                 <div className="aj-loc-row">
                                     <FaMapMarkerAlt size={12} /> {job.location}
                                 </div>
-                                {job.subLoc && <div className="aj-sub-loc">{job.subLoc}</div>}
+                            </div>
+                            <div className="aj-price-badge">
+                                {job.price}<span style={{ fontSize: '0.8rem', fontWeight: 400 }}>/day</span>
                             </div>
                         </div>
 
-                        {/* Middle: Price & Status */}
-                        <div className="aj-job-mid">
-                            <div className="aj-price"><strong>{job.price}</strong>/day</div>
+                        <div className="aj-card-body">
+                            <div className="aj-status-row">
+                                <span className={`aj-status-badge ${job.status}`}>
+                                    {job.status === 'inprogress' ? 'In Progress' : 'Applied'}
+                                </span>
+                                {job.status === 'inprogress' && (
+                                    <span className="aj-countdown">{job.duration_label}</span>
+                                )}
+                            </div>
+
                             {job.status === 'inprogress' ? (
-                                <div className="aj-duration">{job.duration_label}</div>
+                                <div className="aj-info-row">
+                                    <FaInfoCircle size={12} style={{ marginRight: '6px' }} /> {job.progress_time}
+                                </div>
                             ) : (
-                                <div className="aj-dummy-spacer"></div>
+                                <div className="aj-info-row">
+                                    <FaUserFriends size={12} style={{ marginRight: '6px' }} /> {job.applicants} Applicants
+                                </div>
                             )}
                         </div>
 
-                        <div className="aj-job-status-col">
-                            {job.status === 'inprogress' ? (
-                                <>
-                                    <div className="aj-status-pill progress">In Progress</div>
-                                    <div className="aj-timer"><FaClock size={10} /> {job.progress_time}</div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="aj-posted-row">Posted {job.posted}</div>
-                                    <div className="aj-applicants-row"><FaUserFriends size={12} /> {job.applicants} New applicants</div>
-                                </>
-                            )}
-                        </div>
-
-                        {/* Right: Employer & Action */}
-                        <div className="aj-employer-col">
-                            <img src={job.employer.pic} className="aj-emp-pic" alt={job.employer.name} />
-                            <div className="aj-emp-details">
-                                <div className="aj-emp-name">{job.employer.name}</div>
-                                <div className="aj-emp-rating">
-                                    <FaStar color="#F4B400" size={10} /> <FaStar color="#F4B400" size={10} /> <FaStar color="#F4B400" size={10} /> <FaStar color="#F4B400" size={10} />
-                                    {job.status === 'inprogress' && <span style={{ marginLeft: '4px', color: '#777', fontSize: '0.75rem' }}>{job.employer.reviews} Reviews</span>}
+                        <div className="aj-card-footer">
+                            <div className="aj-employer-info">
+                                <img src={job.employer.pic} alt={job.employer.name} />
+                                <div className="aj-emp-text">
+                                    <div className="aj-emp-name">{job.employer.name}</div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="aj-action-col">
-                            {job.status === 'inprogress' ? (
-                                <button className="aj-action-btn message">Message</button>
-                            ) : (
-                                <button className="aj-action-btn applied">Applied</button>
-                            )}
                         </div>
                     </div>
                 ))}

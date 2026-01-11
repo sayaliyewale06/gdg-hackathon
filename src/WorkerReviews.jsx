@@ -47,11 +47,13 @@ const WorkerReviews = () => {
             </div>
 
             {/* Filter & Search Bar */}
+            {/* Filter & Search Bar */}
             <div className="reviews-filter-bar">
-                <button className="filter-dropdown-btn">
-                    All Reviews <FaChevronDown style={{ fontSize: '0.7rem', marginLeft: '6px' }} />
-                </button>
-                <div className="search-box long-search">
+                <div className="filter-group">
+                    <label>All Reviews</label>
+                    <FaChevronDown size={12} />
+                </div>
+                <div className="search-box">
                     <FaSearch />
                     <input type="text" placeholder="Search" />
                 </div>
@@ -62,31 +64,28 @@ const WorkerReviews = () => {
             <div className="reviews-list">
                 {reviews.map((rev, index) => (
                     <div className="review-card-wide" key={index}>
-                        <img src={rev.pic} alt={rev.name} className="review-avatar-lg" />
-
-                        <div className="review-content">
-                            <div className="rc-header">
-                                <h4 className="rc-name">{rev.name} <span className="rc-text">{rev.review}</span></h4>
-                            </div>
-                            <div className="rc-rating-row">
-                                <div className="worker-stars">
-                                    {[...Array(5)].map((_, i) => (
-                                        <FaStar key={i} color={i < Math.floor(rev.rating) ? "#F4B400" : "#D1C7BD"} />
-                                    ))}
-                                </div>
-                                <span className="rc-time">{rev.time}</span>
-                            </div>
-                            <a href="#" className="read-details-link">Read Job Details &gt;</a>
-                            {/* In standard layout, link is bottom left, but design shows it might be right aligned or bottom. 
-                                Design image shows specific text 'Read Job Details' link below stars.
-                             */}
+                        <div className="review-card-left">
+                            <img src={rev.pic} alt={rev.name} className="review-avatar-lg" />
                         </div>
-                        {/* Design shows link on the far right for some items? Actually it looks like it's part of the row. 
-                             Let's stick to standard flow first. 
-                             Wait, looking closely at image: Link is at bottom-right or bottom-left depending on spacing.
-                             Let's make it responsive.
-                          */}
-                        <a href="#" className="read-details-link-desktop">Read Job Details &gt;</a>
+
+                        <div className="review-card-right">
+                            <div className="rc-header">
+                                <h4 className="rc-name">{rev.name}</h4>
+                            </div>
+
+                            <div className="worker-stars" style={{ fontSize: '0.9rem', margin: '4px 0' }}>
+                                {[...Array(5)].map((_, i) => (
+                                    <FaStar key={i} color={i < Math.floor(rev.rating) ? "#F4B400" : "#D1C7BD"} />
+                                ))}
+                            </div>
+
+                            <p className="rc-text">{rev.review}</p>
+
+                            <div className="rc-footer">
+                                <span className="rc-time">{rev.time}</span>
+                                <a href="#" className="read-details-link">Read Job Details &gt;</a>
+                            </div>
+                        </div>
                     </div>
                 ))}
             </div>
