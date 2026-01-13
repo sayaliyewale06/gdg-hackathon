@@ -167,6 +167,7 @@ const ShortlistedWorkers = () => {
                         <div className="shortlist-details">
                             <div className="shortlist-rating">
                                 <span className="stars-gold">{'★'.repeat(Math.floor(worker.rating))}</span>
+                                <span style={{ marginLeft: '4px' }}>{/* spacing */}</span>
                                 <span>{worker.rating}</span>
                             </div>
                             <div className="shortlist-exp-wage">

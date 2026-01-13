@@ -58,7 +58,7 @@ const Notifications = () => {
             id: 5,
             type: 'shortlisted',
             title: 'Arjun Verma Shortlisted',
-            description: 'Auto Driver Arjun Verma has been added to shortlisted workers list.',
+            description: 'Auto Driver Arjun Verma has been added to at shortlisted workers list.',
             time: '1 month ago',
             unread: false,
             img: 'https://randomuser.me/api/portraits/men/33.jpg'
@@ -67,7 +67,7 @@ const Notifications = () => {
             id: 6,
             type: 'generic',
             title: 'Deepals Yadav',
-            description: 'Auto Driver Arjun Verma has been added to shortlisted workers list.', // Copy from prompt
+            description: 'Auto Driver Arjun Verma has been added to shortlisted workers list.',
             time: '1 month ago',
             unread: false,
             img: 'https://randomuser.me/api/portraits/men/52.jpg'
@@ -97,7 +97,6 @@ const Notifications = () => {
             <div className="notifications-header">
                 <div>
                     <h1 className="page-title">Notifications</h1>
-                    {/* Prompt doesn't specify a subtitle for this page, but consistent with others looks good. Omitted to match prompt exactly though. */}
                 </div>
                 <button className="btn-secondary" onClick={handleClearAll} style={{ fontSize: '0.9rem', padding: '8px 16px' }}>
                     Clear All

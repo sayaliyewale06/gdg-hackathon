@@ -89,67 +89,64 @@ const WorkerActiveJobs = () => {
             {/* Job List */}
             <div className="aj-jobs-list">
                 {loading ? (
-                    <div style={{ color: 'white', padding: '20px' }}>Loading jobs...</div>
+                    <div style={{ color: '#555', padding: '20px' }}>Loading jobs...</div>
                 ) : jobs.length === 0 ? (
-                    <div style={{ color: '#ccc', padding: '20px' }}>No active jobs found.</div>
+                    <div style={{ color: '#888', padding: '20px' }}>No active jobs found.</div>
                 ) : (
                     jobs.map((job) => (
-                        <div className="aj-job-card" key={job.id}>
-                            {/* Left: Icon & Title */}
-                            <div className="aj-job-main">
-                                <div className="aj-icon-box">
+                        <div className="aj-job-row" key={job.id}>
+                            {/* Left Section: Icon + Details */}
+                            <div className="aj-row-left">
+                                <div className="aj-icon-large">
                                     {getCategoryIcon(job.category)}
                                 </div>
-                                <div className="aj-job-info">
-                                    <h3 className="aj-title">
-                                        {job.title} {job.isUrgent && <span className="aj-urgent-tag">Urgent</span>}
-                                    </h3>
-                                    <div className="aj-loc-row">
+                                <div className="aj-details-col">
+                                    <h3 className="aj-row-title">{job.title}</h3>
+                                    <div className="aj-row-loc">
                                         <FaMapMarkerAlt size={12} /> {job.location}
                                     </div>
-                                    {job.description && <div className="aj-sub-loc" style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.description}</div>}
-                                </div>
-                            </div>
-
-                            {/* Middle: Price & Status */}
-                            <div className="aj-job-mid">
-                                <div className="aj-price"><strong>₹{job.wage}</strong>/day</div>
-                                {job.status === 'in_progress' ? (
-                                    <div className="aj-duration">In Progress</div>
-                                ) : (
-                                    <div className="aj-dummy-spacer"></div>
-                                )}
-                            </div>
-
-                            <div className="aj-job-status-col">
-                                {job.status === 'in_progress' ? (
-                                    <>
-                                        <div className="aj-status-pill progress">In Progress</div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="aj-posted-row">Posted {new Date(job.createdAt).toLocaleDateString()}</div>
-                                        <div className="aj-applicants-row"><FaUserFriends size={12} /> {job.applicantsCount} Applicants</div>
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Right: Employer & Action */}
-                            <div className="aj-employer-col">
-                                <img src={job.hirerPic || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"} className="aj-emp-pic" alt={job.hirerName} />
-                                <div className="aj-emp-details">
-                                    <div className="aj-emp-name">{job.hirerName || 'Unknown'}</div>
-                                    <div className="aj-emp-rating">
-                                        <FaStar color="#F4B400" size={10} /> {job.hirerRating ? job.hirerRating.toFixed(1) : 'New'}
+                                    <div className="aj-row-desc">
+                                        {job.description || "General Helper work required"}
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="aj-action-col">
+                            {/* Middle Section: Price + Status */}
+                            <div className="aj-row-mid">
+                                <div className="aj-wage-text">₹{job.wage}<span className="per-day">/day</span></div>
+                                <div className="aj-status-group">
+                                    {job.isUrgent ? (
+                                        <span className="aj-badge urgent">Urgent</span>
+                                    ) : job.status === 'in_progress' ? (
+                                        <span className="aj-badge progress">In Progress</span>
+                                    ) : (
+                                        <span className="aj-posted-text">Posted {new Date(job.createdAt).toLocaleDateString()}</span>
+                                    )}
+                                </div>
+                                <div className="aj-meta-info">
+                                    {job.status === 'in_progress' ? (
+                                        <span><FaClock size={10} /> 3 Days Left</span>
+                                    ) : (
+                                        <span><FaUserFriends size={10} /> {job.applicantsCount || 0} New applicants</span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Right Section: Recruiter + Action */}
+                            <div className="aj-row-right">
+                                <div className="aj-recruiter-profile">
+                                    <img src={job.hirerPic || "https://randomuser.me/api/portraits/men/32.jpg"} alt={job.hirerName} className="aj-recruiter-pic" />
+                                    <div className="aj-recruiter-info">
+                                        <div className="aj-recruiter-name">{job.hirerName || 'Unknown'}</div>
+                                        <div className="aj-recruiter-rating">
+                                            <FaStar color="#F4B400" size={10} /> {job.hirerRating ? job.hirerRating.toFixed(1) : 'New'}
+                                        </div>
+                                    </div>
+                                </div>
                                 {job.status === 'in_progress' ? (
-                                    <button className="aj-action-btn message">Message</button>
+                                    <button className="aj-btn message">Message</button>
                                 ) : (
-                                    <button className="aj-action-btn applied">Apply</button>
+                                    <button className="aj-btn applied">Applied</button>
                                 )}
                             </div>
                         </div>

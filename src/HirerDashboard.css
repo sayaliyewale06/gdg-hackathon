@@ -61,6 +61,61 @@ html {
     color: var(--accent-orange);
 }
 
+/* Main Header Actions styling */
+.logo-clickable {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    display: flex;
+    /* alignment for toggle button */
+    align-items: center;
+}
+
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--primary-text);
+    padding: 0;
+    margin-right: 12px;
+    cursor: pointer;
+}
+
+.logo-clickable:hover {
+    opacity: 0.8;
+}
+
+/* Added Top Navigation Styles */
+.top-nav {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    height: 100%;
+}
+
+.nav-link {
+    font-size: 16px;
+    color: #6b6b6b;
+    cursor: pointer;
+    text-decoration: none;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: var(--accent-orange);
+    border-bottom-color: var(--accent-orange);
+}
+
+.nav-link.active {
+    color: var(--accent-orange);
+    border-bottom-color: var(--accent-orange);
+    font-weight: 600;
+}
+
 
 
 .header-actions {
@@ -123,11 +178,24 @@ html {
 /* ================= 2. Dashboard Grid Body ================= */
 .dashboard-grid-container {
     display: grid;
-    grid-template-columns: 280px 1fr 350px;
     /* Fixed Left | Flexible Center | Fixed Right */
+    grid-template-columns: 250px 1fr 350px;
     height: calc(100vh - var(--header-height));
     overflow: hidden;
-    /* Prevent container scroll */
+    width: 100%;
+}
+
+.dashboard-grid-container.full-width {
+    grid-template-columns: 250px 1fr;
+    /* No right sidebar column */
+}
+
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    /* Ensure content doesn't overflow grid cell */
+    min-width: 0;
 }
 
 /* ================= Left Sidebar (Fixed) ================= */
@@ -238,11 +306,67 @@ html {
     margin: 0;
 }
 
-.stats-row {
+/* Stats Grid New Component */
+.dashboard-stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
-    margin-bottom: 40px;
+    margin-bottom: 32px;
+}
+
+.post-job-card {
+    background: #d4835c !important;
+    /* Orange background */
+    color: white !important;
+    border: none;
+}
+
+.post-job-card .card-icon-box {
+    background: rgba(255, 255, 255, 0.2) !important;
+    /* Lighter transparent bg */
+    color: white !important;
+}
+
+.post-job-card .card-title {
+    color: white;
+}
+
+.post-job-card .card-value {
+    display: none;
+    /* No value for this card */
+}
+
+.post-job-card:hover {
+    background: #c97550;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 131, 92, 0.3);
+}
+
+.post-job-card:active {
+    transform: translateY(0);
+}
+
+/* Fallback for older .stats-row if needed */
+.stats-row {
+    display: none;
+}
+
+.summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #fcece3;
 }
 
 .stat-card {
@@ -548,8 +672,8 @@ html {
 
 @media (max-width: 1200px) {
     .dashboard-grid-container {
+        /* Collapse Right Sidebar first or just resize columns */
         grid-template-columns: 80px 1fr 300px;
-        /* Collapse Left Sidebar */
     }
 
     .left-sidebar-fixed {
@@ -572,17 +696,53 @@ html {
     }
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
     .dashboard-grid-container {
         grid-template-columns: 1fr;
-        /* Stack everything */
+        /* Stack or just hide sidebars */
         height: auto;
-        overflow-y: auto;
+        overflow-y: visible;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .right-sidebar-scrollable {
+        display: none;
+        /* Hide on smaller screens as requested */
+    }
+
+    .main-content {
+        max-width: 100%;
+        padding: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .top-nav {
+        display: none;
+    }
+
+    .mobile-menu-toggle {
+        display: flex;
     }
 
     .left-sidebar-fixed {
         display: none;
-        /* Hide sidebar */
+        /* Default hidden on mobile */
+    }
+
+    .left-sidebar-fixed.mobile-open {
+        display: flex;
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        background: var(--bg-color);
+        z-index: 1000;
+        border-right: 1px solid var(--border-color);
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
     }
 
     .right-sidebar-scrollable {
@@ -612,5 +772,15 @@ html {
 
     .stats-row {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .dashboard-stats-grid {
+        grid-template-columns: 1fr;
     }
 }

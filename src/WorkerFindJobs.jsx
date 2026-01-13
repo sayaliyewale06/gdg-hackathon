@@ -168,7 +168,9 @@ const WorkerFindJobs = () => {
                                     </div>
                                 </div>
                             </div>
-                            <button className="apply-btn-blue secondary">Apply</button>
+
+                            {/* Removed duplicate Apply button */}
+
                         </div>
                     </div>
 
@@ -221,7 +223,9 @@ const WorkerFindJobs = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <button className="apply-btn-blue secondary">Apply</button>
+
+                                {/* Removed duplicate Apply button */}
+
                             </div>
                         </div>
                     ))}
@@ -308,8 +312,8 @@ const WorkerFindJobs = () => {
                         </div>
                     </div>
                 </aside>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

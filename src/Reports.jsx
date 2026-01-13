@@ -6,7 +6,8 @@ import {
     Users,
     IndianRupee,
     ChevronDown,
-    Download
+    Download,
+    ChevronLeft
 } from 'lucide-react';
 import './Reports.css';
 
@@ -28,8 +29,8 @@ const Reports = () => {
             role: 'Electrician',
             jobRole: 'Electrician',
             location: 'Noida',
-            phone: '+91 9845 32****',
-            details: '5 Years Exp',
+            phone: '+91 9665 32****',
+            details: '5 Years Experience',
             date: 'Apr 26, 2024',
             payment: 3200,
             status: 'Paid',
@@ -40,9 +41,9 @@ const Reports = () => {
             name: 'Vinod Patel',
             role: 'Mason',
             jobRole: 'Mason',
-            location: '',
-            phone: '+91 9866 30****',
-            details: '4 Years Exp',
+            location: 'Wakad', // Inferred location from context or blank if not specified
+            phone: '+91 9665 32****',
+            details: '4 Years Experience',
             date: 'Apr 25, 2024',
             payment: 3500,
             status: 'Paid',
@@ -51,11 +52,11 @@ const Reports = () => {
         {
             id: 3,
             name: 'Ramesh Yadav',
-            role: 'Electrician',
-            jobRole: 'Construction Laborer',
+            role: 'Construction Laborer',
+            jobRole: 'Electrician', // As per prompt Row 3: Job: Electrician, Construction Laborer ?? Maybe Job Title is Electrician? Or Role? Prompt says "Job: Electrician, Construction Laborer". I'll use Construction Laborer as Role and Electrician as Job Title to match headers.
             location: '',
-            phone: '+91 9845 32****',
-            details: '6 Years Exp',
+            phone: '+91 9665 32****',
+            details: '3 Years Experience',
             date: 'Apr 22, 2024',
             payment: 2250,
             status: 'Pending',
@@ -68,7 +69,7 @@ const Reports = () => {
             jobRole: 'Plumber',
             location: 'Hinjewadi',
             phone: '+91 9587 64****',
-            details: '6 Years Exp',
+            details: '6 Years Experience',
             date: 'Apr 17, 2024',
             payment: 1600,
             status: 'Paid',
@@ -79,9 +80,9 @@ const Reports = () => {
             name: 'Kamlesh Kumar',
             role: 'Welder',
             jobRole: 'Welder',
-            location: 'Baner',
-            phone: '+91 987 64****',
-            details: '5 Years Exp',
+            location: 'Baner Pune',
+            phone: '+91 787 64****',
+            details: '5 Years Experience',
             date: 'Apr 15, 2024',
             payment: 3400,
             status: 'Paid',
@@ -93,7 +94,7 @@ const Reports = () => {
             role: 'Auto Driver',
             jobRole: 'Auto Driver',
             location: '',
-            phone: '',
+            phone: '', // Detailed phone not provided in prompt for Row 6
             details: '',
             date: 'Apr 14, 2024',
             payment: 500,
@@ -202,7 +203,7 @@ const Reports = () => {
                                             <img src={row.img} alt={row.name} className="cell-worker-img" />
                                             <div className="cell-worker-info">
                                                 <h4>{row.name}</h4>
-                                                <div className="cell-worker-sub">{row.role} • {row.phone}</div>
+                                                <div className="cell-worker-sub">{row.role} {row.phone ? `• ${row.phone}` : ''}</div>
                                             </div>
                                         </td>
                                         <td>
@@ -227,6 +228,18 @@ const Reports = () => {
                         </table>
                     </div>
                 </div>
+
+                {/* Pagination (Page 3 Active) */}
+                <div className="pagination">
+                    <button className="page-btn"><ChevronLeft size={16} /></button>
+                    <button className="page-btn">1</button>
+                    <button className="page-btn">2</button>
+                    <button className="page-btn active">3</button>
+                    <button className="page-btn">4</button>
+                    <button className="page-btn">5</button>
+                    <button className="page-btn">6</button>
+                    <button className="page-btn"><ChevronRight size={16} /></button>
+                </div>
             </main>
 
             {/* RIGHT COLUMN: Sidebar Panel (Fixed/Flush) */}
@@ -244,6 +257,20 @@ const Reports = () => {
                     <li className="tip-item">
                         <span className="tip-icon">💾</span>
                         <div>Download reports to keep records</div>
+                    </li>
+                </ul>
+
+                {/* Duplicate tip section as requested in prompt "appears twice in your design" - checking design it might just be the same card repeated or different content. I will duplicate it visually as user explicitly said "Right Sidebar - "Tip for Using Reports" section (appears twice in your design)" */}
+                <div style={{ marginTop: '32px' }}></div>
+                <h3 className="tip-header">Tip for Using Reports</h3>
+                <ul className="tip-list">
+                    <li className="tip-item">
+                        <span className="tip-icon">📍</span>
+                        <div>Use filters to find specific report types</div>
+                    </li>
+                    <li className="tip-item">
+                        <span className="tip-icon">Il</span>
+                        <div>Analyze hiring and payment trends regularly</div>
                     </li>
                 </ul>
             </aside>

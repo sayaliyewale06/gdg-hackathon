@@ -196,7 +196,6 @@ const Messages = () => {
                                 <div className="chat-user-status">
                                     <span className="status-dot"></span>
                                     {activeConversation.role}
-                                    {/* "Auto Driver Driver" per prompt typo or fix? Prompt says "Auto Driver Driver". Using Role + Fix */}
                                 </div>
                             </div>
                         </div>

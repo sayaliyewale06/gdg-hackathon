@@ -5,7 +5,7 @@ import {
     ChevronRight,
     Star,
     Phone,
-    Monitor, /* Using Monitor as generic placeholder if WhatsApp icon not available in lucide set widely */
+    MessageCircle, // Using MessageCircle for WhatsApp/Message
     Filter
 } from 'lucide-react';
 import './Applicants.css';
@@ -13,7 +13,7 @@ import './Applicants.css';
 const Applicants = () => {
     const navigate = useNavigate();
 
-    // Mock Data
+    // Mock Data - Specific to requirements
     const applicantsData = [
         {
             id: 1,
@@ -215,12 +215,13 @@ const Applicants = () => {
                             <div className="wage-row">
                                 ₹{applicant.wage}<span className="wage-unit">/day</span>
                             </div>
-                            {/* Duplicate wage shown in requirement mock? mimicking layout with two columns of wage if needed, or just contact info */}
+                            {/* Duplicate wage shown in requirements - typically implies expected vs offered or just a UI trait */}
                             <div className="wage-row" style={{ opacity: 0.7 }}>
                                 ₹{applicant.wage}<span className="wage-unit">/day</span>
                             </div>
                             <div className="contact-row">
                                 <Phone size={16} />
+                                <MessageCircle size={16} />
                                 <span>{applicant.phone}</span>
                             </div>
                         </div>

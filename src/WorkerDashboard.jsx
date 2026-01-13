@@ -8,6 +8,7 @@ import WorkerReviews from './WorkerReviews';
 import WorkerQRCode from './WorkerQRCode';
 import WorkerActiveJobs from './WorkerActiveJobs';
 import WorkerFindJobs from './WorkerFindJobs';
+import WorkerNotifications from './WorkerNotifications';
 import { FaUserCircle, FaSearch, FaBriefcase, FaStar, FaWallet, FaMapMarkerAlt, FaBell, FaUsers, FaPlus, FaCheckCircle, FaGlobe, FaArrowUp, FaQrcode } from 'react-icons/fa';
 
 const WorkerDashboard = () => {
@@ -41,7 +42,7 @@ const WorkerDashboard = () => {
         <div className="worker-dashboard">
             {/* Top Header */}
             <header className="main-header">
-                <div className="brand" onClick={() => setActiveView('dashboard')} style={{ cursor: 'pointer' }}>
+                <div className="brand logo-clickable" onClick={() => setActiveView('dashboard')}>
                     <FaMapMarkerAlt className="brand-icon" />
                     <span>Digital Naka</span>
                 </div>
@@ -52,7 +53,7 @@ const WorkerDashboard = () => {
 
                 <div className="header-actions">
 
-                    <button className="icon-btn">
+                    <button className="icon-btn" onClick={() => setActiveView('notifications')}>
                         <FaBell />
                         <span className="badge">3</span>
                     </button>
@@ -130,18 +131,20 @@ const WorkerDashboard = () => {
                 </aside>
 
                 {/* Main Content Area (Center + Right) */}
-                <main className="main-content-area" style={{ display: ['earnings', 'myjobs', 'reviews', 'qrcode', 'activejobs', 'findjobs'].includes(activeView) ? 'block' : 'grid', width: '100%' }}>
+                <main className="main-content-area" style={{ display: ['earnings', 'myjobs', 'reviews', 'qrcode', 'activejobs', 'findjobs', 'notifications'].includes(activeView) ? 'block' : 'grid', width: '100%' }}>
                     {activeView === 'earnings' && <WorkerEarnings />}
 
                     {activeView === 'activejobs' && <WorkerActiveJobs />}
+
+                    {activeView === 'findjobs' && <WorkerFindJobs />}
 
                     {activeView === 'myjobs' && <WorkerMyJobs />}
 
                     {activeView === 'reviews' && <WorkerReviews />}
 
-                    {activeView === 'findjobs' && <WorkerFindJobs />}
-
                     {activeView === 'qrcode' && <WorkerQRCode />}
+
+                    {activeView === 'notifications' && <WorkerNotifications />}
 
                     {activeView === 'dashboard' && (
                         <>
