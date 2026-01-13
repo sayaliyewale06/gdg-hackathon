@@ -46,15 +46,7 @@
     background: #c0b6ad;
 }
 
-body {
-    background-color: var(--bg-color);
-    color: var(--primary-text);
-    font-family: var(--font-main);
-    margin: 0;
-    overflow: hidden;
-    /* Prevent body scroll, handle inside dashboard */
-    height: 100vh;
-}
+/* Body styles moved to global index.css to prevent conflicts */
 
 .worker-dashboard {
     height: 100vh;
@@ -638,6 +630,25 @@ body {
     margin: 0;
     font-size: 0.95rem;
     color: var(--primary-text);
+}
+
+.view-all-button {
+    background: transparent;
+    border: none;
+    color: var(--accent-orange);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: right;
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 4px 0;
+}
+
+.view-all-button:hover {
+    text-decoration: underline;
+    opacity: 0.8;
 }
 
 /* ================= Responsiveness ================= */
@@ -1988,6 +1999,369 @@ body {
     border-radius: 4px;
     font-size: 0.8rem;
     cursor: pointer;
+}
+
+/* Worker Job Application Page */
+.worker-job-application-container {
+    padding: 24px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.app-header-row {
+    margin-bottom: 24px;
+}
+
+.breadcrumbs {
+    color: var(--secondary-text);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.breadcrumbs .current {
+    color: var(--primary-color);
+}
+
+.page-title {
+    font-size: 1.8rem;
+    color: #333;
+    margin: 0;
+}
+
+.app-main-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 900px) {
+    .app-main-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Job Summary Card */
+.app-job-summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 24px;
+    border: 1px solid #eee;
+}
+
+.ajs-header h2 {
+    margin: 0 0 8px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.4rem;
+}
+
+.ajs-wage {
+    font-size: 1.2rem;
+    color: #333;
+    font-weight: 600;
+}
+
+.ajs-loc {
+    color: #666;
+    margin: 0;
+}
+
+.ajs-recruiter {
+    display: flex;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.ajs-recruiter-pic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+}
+
+.ajs-recruiter-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.ajs-recruiter-info strong {
+    font-weight: 600;
+    color: #333;
+}
+
+.ajs-recruiter-info span {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+/* Application Form Section */
+.app-form-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.app-form-section h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    color: #5D7E85;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+/* Custom Animated Checkbox */
+.checkbox-wrapper {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    /* Align with top of text */
+    gap: 12px;
+    cursor: pointer;
+    margin-bottom: 0;
+    /* Handled by container gap */
+}
+
+/* Hide default checkbox */
+.checkbox-wrapper input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Custom checkbox box */
+.custom-checkbox-box {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #d1d5db;
+    /* Gray-300 */
+    border-radius: 4px;
+    background-color: white;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    /* Prevent shrinking */
+    margin-top: 2px;
+    /* Visual alignment with text */
+}
+
+/* Hover effect */
+.checkbox-wrapper:hover .custom-checkbox-box {
+    border-color: #5a9c9c;
+    box-shadow: 0 0 0 3px rgba(90, 156, 156, 0.1);
+}
+
+/* Checked state */
+.checkbox-wrapper input[type="checkbox"]:checked+.custom-checkbox-box {
+    background-color: #5a9c9c;
+    border-color: #5a9c9c;
+    animation: checkboxPulse 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Checkmark */
+.custom-checkbox-box::after {
+    content: '';
+    position: absolute;
+    display: none;
+    left: 6px;
+    top: 2px;
+    width: 6px;
+    height: 12px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    animation: checkmarkSlide 0.3s ease-out forwards;
+}
+
+.checkbox-wrapper input[type="checkbox"]:checked+.custom-checkbox-box::after {
+    display: block;
+}
+
+/* Label Text */
+.checkbox-label {
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.4;
+    user-select: none;
+}
+
+/* Keyframe Animations */
+@keyframes checkboxPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes checkmarkSlide {
+    0% {
+        opacity: 0;
+        transform: rotate(45deg) scale(0.5) translateY(-4px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: rotate(45deg) scale(1) translateY(0);
+    }
+}
+
+/* Ripple effect on click */
+@keyframes ripple {
+    0% {
+        box-shadow: 0 0 0 0 rgba(90, 156, 156, 0.4);
+    }
+
+    100% {
+        box-shadow: 0 0 0 12px rgba(90, 156, 156, 0);
+    }
+}
+
+.checkbox-wrapper input[type="checkbox"]:checked+.custom-checkbox-box {
+    animation: checkboxPulse 0.4s, ripple 0.6s;
+}
+
+/* Disabled state */
+.checkbox-wrapper input[type="checkbox"]:disabled+.custom-checkbox-box {
+    background-color: #f3f4f6;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.message-section {
+    margin-bottom: 24px;
+}
+
+.message-section label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.message-section textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.message-section textarea:focus {
+    border-color: var(--primary-color);
+}
+
+.error-message {
+    color: #d32f2f;
+    background: #ffebee;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.form-actions-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.cancel-btn {
+    padding: 10px 20px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #666;
+}
+
+.submit-btn {
+    padding: 10px 24px;
+    background-color: #5a9c9c;
+    /* teal */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    opacity: 1;
+    transition: background 0.2s;
+}
+
+.submit-btn:hover:not(.disabled) {
+    background-color: #4a8c8c;
+}
+
+.submit-btn.disabled {
+    background-color: #d1d5db;
+    /* gray */
+    color: #9ca3af;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Sidebar Tips */
+.app-tips-card {
+    background: #f9fafb;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.app-tips-card h3 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+}
+
+.tips-check-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tips-check-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+    color: #555;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.tip-icon-check {
+    color: var(--primary-color);
+    margin-top: 3px;
+    flex-shrink: 0;
 }
 
 @media (max-width: 900px) {

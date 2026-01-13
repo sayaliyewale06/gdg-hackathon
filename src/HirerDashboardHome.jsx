@@ -22,17 +22,33 @@ const HirerDashboardHome = () => {
     const [isPostJobOpen, setIsPostJobOpen] = useState(false);
     const [stats, setStats] = useState({
         ongoing: 0,
-        applicants: 0 // Placeholder
+        applicants: 0,
+        shortlisted: 0,
+        notifications: 0
     });
 
     useEffect(() => {
         const fetchStats = async () => {
             if (currentUser?.uid) {
                 try {
-                    const jobs = await DB.jobs.getByHirer(currentUser.uid);
-                    // Filter for open or in_progress jobs
+                    // Parallel fetching for performance
+                    const [jobs, applications, notifications] = await Promise.all([
+                        DB.jobs.getByHirer(currentUser.uid),
+                        DB.applications.getByHirer(currentUser.uid),
+                        DB.notifications.getByUser(currentUser.uid)
+                    ]);
+
                     const ongoing = jobs.filter(j => ['open', 'in_progress'].includes(j.status)).length;
-                    setStats(prev => ({ ...prev, ongoing }));
+                    const newApplicants = applications.length; // Total applications received
+                    const shortlisted = applications.filter(a => a.status === 'accepted').length; // Assuming 'accepted' means shortlisted/hired for now
+                    const unreadNotifs = notifications.filter(n => !n.read).length;
+
+                    setStats({
+                        ongoing,
+                        applicants: newApplicants,
+                        shortlisted,
+                        notifications: unreadNotifs
+                    });
                 } catch (error) {
                     console.error("Error fetching stats:", error);
                 }
@@ -77,7 +93,7 @@ const HirerDashboardHome = () => {
                     </div>
                     <div className="card-text-content">
                         <div className="card-title">Applicants</div>
-                        <div className="card-value">23 <span>New</span></div>
+                        <div className="card-value">{stats.applicants} <span>Received</span></div>
                     </div>
                 </div>
 
@@ -94,7 +110,7 @@ const HirerDashboardHome = () => {
                     </div>
                     <div className="card-text-content">
                         <div className="card-title">Shortlisted Workers</div>
-                        <div className="card-value">7</div>
+                        <div className="card-value">{stats.shortlisted}</div>
                     </div>
                 </div>
 
@@ -111,7 +127,7 @@ const HirerDashboardHome = () => {
                     </div>
                     <div className="card-text-content">
                         <div className="card-title">Notifications</div>
-                        <div className="card-value">1 <span>New</span></div>
+                        <div className="card-value">{stats.notifications} <span>New</span></div>
                     </div>
                 </div>
 

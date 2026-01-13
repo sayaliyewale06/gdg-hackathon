@@ -13,17 +13,7 @@
     --header-height: 80px;
 }
 
-body,
-html {
-    margin: 0;
-    padding: 0;
-    font-family: var(--font-main);
-    background-color: var(--bg-color);
-    color: var(--primary-text);
-    overflow: hidden;
-    /* Prevent body scroll, handle internally */
-    height: 100vh;
-}
+/* Body/HTML styles moved to global index.css */
 
 /* ================= Main Container ================= */
 .hirer-dashboard {
@@ -196,6 +186,34 @@ html {
     padding: 24px;
     /* Ensure content doesn't overflow grid cell */
     min-width: 0;
+    background-color: #f5f1eb !important;
+    /* Force light beige background */
+    color: #4A4036;
+    /* Dark text for contrast */
+}
+
+/* Fix for HirerDashboardHome using .welcome-section instead of .welcome-banner */
+.welcome-section {
+    margin-bottom: 32px;
+}
+
+.welcome-section h1 {
+    font-size: 2rem;
+    color: #4A4036;
+    /* Dark text */
+    margin: 0 0 8px 0;
+    font-weight: 700;
+}
+
+.welcome-section p {
+    color: #888888;
+    margin: 0;
+}
+
+/* Ensure Home Dashboard Content is also light */
+.home-dashboard-content {
+    background-color: #f5f1eb;
+    color: #4A4036;
 }
 
 /* ================= Left Sidebar (Fixed) ================= */

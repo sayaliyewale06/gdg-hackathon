@@ -222,69 +222,77 @@
     gap: 16px;
 }
 
+/* Message Container Logic (User Requested) */
 .message-group {
     display: flex;
     gap: 12px;
     max-width: 70%;
+    margin-bottom: 16px;
+    width: 100%;
+    /* Ensure container takes full width for flex alignment */
 }
 
+/* Incoming Messages - Left Aligned */
 .message-group.incoming {
     align-self: flex-start;
+    justify-content: flex-start;
+    margin-right: auto;
 }
 
+.message-group.incoming .message-bubble {
+    background-color: #f3f4f6;
+    /* Light gray */
+    color: #374151;
+    border-radius: 12px 12px 12px 0px;
+    border-radius: 12px 12px 12px 4px;
+    border: 1px solid #e5e7eb;
+}
+
+/* Outgoing Messages - Right Aligned */
 .message-group.outgoing {
     align-self: flex-end;
-    flex-direction: row-reverse;
+    justify-content: flex-end;
+    margin-left: auto;
+    flex-direction: row;
+    /* Keep standard row, but content justified end */
 }
 
-.message-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-top: 4px;
-    /* Align with top of bubble */
+.message-group.outgoing .message-avatar {
+    display: none;
+    /* Hide avatar for outgoing as requested */
 }
 
-.message-bubble-container {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+.message-group.outgoing .message-bubble {
+    background-color: #ea8652;
+    /* Orange */
+    color: white;
+    border-radius: 12px 12px 4px 12px;
+    border: none;
 }
 
+/* Common Bubble Styles */
 .message-bubble {
-    background: #fff;
     padding: 12px 16px;
-    border-radius: 0px 12px 12px 12px;
-    /* Top-Left corner sharp for incoming */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    position: relative;
     font-size: 0.95rem;
     line-height: 1.5;
-    color: var(--primary-text);
-    border: 1px solid #EAEAEA;
-}
-
-.incoming .message-bubble {
-    background: #FFF8F4;
-    /* Light beige for incoming */
-    border-radius: 0px 12px 12px 12px;
-}
-
-.outgoing .message-bubble {
-    background: #F0E8E2;
-    /* Darker beige for outgoing */
-    border-radius: 12px 0px 12px 12px;
-    /* Top-Right corner sharp */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .message-time {
     font-size: 0.7rem;
-    color: #999;
-    margin-top: 2px;
+    margin-top: 4px;
+    opacity: 0.7;
 }
 
-.outgoing .message-time {
+.message-group.incoming .message-time {
+    color: #6b7280;
+    text-align: left;
+}
+
+.message-group.outgoing .message-time {
     text-align: right;
+    color: #999;
 }
 
 

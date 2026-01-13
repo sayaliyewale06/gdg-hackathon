@@ -11,18 +11,21 @@ import {
     ChevronRight,
     Star
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import './HirerDashboard.css';
 import './PostJob.css';
+import { DB } from './lib/db';
+import { useAuth } from './context/AuthContext';
 
 const PostJob = () => {
     const navigate = useNavigate();
 
     // Form State
     const [formData, setFormData] = useState({
-        jobTitle: '',
+        title: '',
         location: 'Sector 21, Noida',
         category: 'Electrician',
-        dailyWage: '800',
+        wage: '800',
         duration: 4,
         urgent: false,
         description: ''
@@ -43,12 +46,34 @@ const PostJob = () => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const { currentUser } = useAuth();
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Job Posted:', formData);
-        // Add functionality to save job to backend here
-        alert('Job Posted Successfully!');
-        navigate('/hire-dashboard');
+
+        if (!currentUser) return;
+
+        try {
+            await DB.jobs.create({
+                ...formData,
+                wage: Number(formData.wage),
+                isUrgent: formData.urgent, // Map form field to schema field
+                hirerId: currentUser.uid,
+                hirerName: currentUser.displayName || 'Unknown Hirer',
+                hirerPic: currentUser.photoURL || null,
+                hirerRating: 4.5, // Default or fetch real rating
+                status: 'open',
+            });
+            toast.success('Job Posted Successfully!');
+            navigate('/hire-dashboard');
+        } catch (error) {
+            console.error("Error posting job:", error);
+            // Alert specific Zod error if available, or general error message
+            const errorMessage = error.issues
+                ? error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('\n')
+                : error.message;
+            toast.error(`Failed to post job: ${errorMessage}`);
+        }
     };
 
     return (
@@ -75,8 +100,8 @@ const PostJob = () => {
                         </label>
                         <input
                             type="text"
-                            name="jobTitle"
-                            value={formData.jobTitle}
+                            name="title"
+                            value={formData.title}
                             onChange={handleChange}
                             placeholder="e.g. Electrician Needed for Wiring"
                             className="form-input"
@@ -137,8 +162,8 @@ const PostJob = () => {
                                 <span className="currency-symbol">₹</span>
                                 <input
                                     type="number"
-                                    name="dailyWage"
-                                    value={formData.dailyWage}
+                                    name="wage"
+                                    value={formData.wage}
                                     onChange={handleChange}
                                     className="form-input currency-input"
                                 />

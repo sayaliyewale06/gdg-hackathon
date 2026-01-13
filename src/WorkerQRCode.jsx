@@ -1,8 +1,69 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './WorkerDashboard.css';
-import { FaCheckCircle, FaQrcode, FaDownload, FaBriefcase, FaRupeeSign, FaTools, FaMapMarkerAlt, FaStar, FaEye } from 'react-icons/fa';
+import { DB } from './lib/db';
+import { useAuth } from './context/AuthContext';
+import { FaCheckCircle, FaQrcode, FaDownload, FaBriefcase, FaRupeeSign, FaTools, FaMapMarkerAlt, FaStar, FaEye, FaUserCircle } from 'react-icons/fa';
 
 const WorkerQRCode = () => {
+    const { currentUser } = useAuth();
+    const [userProfile, setUserProfile] = useState(null);
+    const [stats, setStats] = useState({ earnings: 0, reviewsCount: 0, rating: 0 });
+    const [reviews, setReviews] = useState([]);
+    const [skills, setSkills] = useState("General Worker");
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (currentUser?.uid) {
+                try {
+                    const [userDoc, myReviews, myApplications, allJobs] = await Promise.all([
+                        DB.users.get(currentUser.uid),
+                        DB.reviews.getByTargetUser(currentUser.uid),
+                        DB.applications.getByWorker(currentUser.uid),
+                        DB.jobs.getAll()
+                    ]);
+
+                    if (userDoc) {
+                        setUserProfile(userDoc);
+                        if (userDoc.skills && userDoc.skills.length > 0) {
+                            setSkills(userDoc.skills.join(", "));
+                        }
+                    }
+
+                    // Calculate Earnings
+                    const jobsMap = new Map(allJobs.map(j => [j.id, j]));
+                    const completedApps = myApplications.filter(a => a.status === 'completed');
+                    let totalEarnings = 0;
+                    completedApps.forEach(app => {
+                        const job = jobsMap.get(app.jobId);
+                        if (job) totalEarnings += Number(job.wage);
+                    });
+
+                    // Reviews Stats
+                    const avgRating = myReviews.length > 0
+                        ? (myReviews.reduce((acc, r) => acc + r.rating, 0) / myReviews.length).toFixed(1)
+                        : 0;
+
+                    setStats({
+                        earnings: totalEarnings,
+                        reviewsCount: myReviews.length,
+                        rating: avgRating
+                    });
+
+                    setReviews(myReviews.slice(0, 2));
+
+                } catch (error) {
+                    console.error("Error fetching QR data:", error);
+                }
+            }
+        };
+        fetchData();
+    }, [currentUser]);
+
+    const qrData = currentUser ? `https://digitalnaka.com/worker/${currentUser.uid}` : "";
+    const downloadQR = () => {
+        // Simple mock download
+        alert("Downloading QR Code...");
+    };
     return (
         <div className="earnings-container">
             <div className="section-heading-row">
@@ -12,7 +73,7 @@ const WorkerQRCode = () => {
                 </div>
             </div>
             <div className="section-heading-row" style={{ marginBottom: '24px' }}>
-                <h1 style={{ margin: 0 }}>Rajesh Kumar</h1>
+                <h1 style={{ margin: 0 }}>{currentUser?.displayName || "Worker Name"}</h1>
             </div>
 
             <div className="qr-dashboard-grid">
@@ -20,12 +81,12 @@ const WorkerQRCode = () => {
                 <div className="qr-profile-card">
                     <div className="qr-profile-header">
                         <div className="qr-avatar-wrapper">
-                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLe5PABjXc17cjIMOibECLM7ppDwMmiDg6Dw&s" alt="Rajesh Kumar" className="qr-avatar" />
+                            <img src={currentUser?.photoURL || "https://randomuser.me/api/portraits/men/99.jpg"} alt="Avatar" className="qr-avatar" />
                         </div>
                         <div className="qr-user-details">
-                            <h2>Rajesh Kumar</h2>
-                            <p>Top Worker</p>
-                            <p>+91 98765 43210</p>
+                            <h2>{currentUser?.displayName || "Worker Name"}</h2>
+                            <p>{userProfile?.status || "Verified Worker"}</p>
+                            <p>{userProfile?.phone || currentUser?.email || "+91 XXXXX XXXXX"}</p>
                         </div>
                     </div>
 
@@ -35,7 +96,11 @@ const WorkerQRCode = () => {
                     </div>
 
                     <div className="qr-code-box">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://digitalnaka.com/worker/rajesh-kumar" alt="Worker QR Code" className="main-qr-img" />
+                        <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}`}
+                            alt="Worker QR Code"
+                            className="main-qr-img"
+                        />
                         <p className="qr-scan-text">Scan this unique QR code to view my resume.</p>
 
                         <div className="qr-action-buttons">
@@ -53,30 +118,32 @@ const WorkerQRCode = () => {
                 <div className="qr-right-col">
                     {/* Resume Card */}
                     <div className="qr-info-card">
-                        <h3 className="qr-card-title">Rajesh's Resume</h3>
+                        <h3 className="qr-card-title">{currentUser?.displayName ? currentUser.displayName.split(' ')[0] : 'Worker'}'s Resume</h3>
 
                         <div className="resume-list">
                             <div className="resume-item">
-                                <FaBriefcase className="resume-icon" /> <span>5+ Years working in daily wage jobs</span>
+                                <FaBriefcase className="resume-icon" /> <span>{userProfile?.experience || "New Worker"}</span>
                             </div>
                             <div className="resume-item">
-                                <FaRupeeSign className="resume-icon" /> <span><strong>₹65,700</strong> total Earned</span>
+                                <FaRupeeSign className="resume-icon" /> <span><strong>₹{stats.earnings}</strong> total Earned</span>
                             </div>
                             <div className="resume-item">
-                                <FaTools className="resume-icon" /> <span>Masonry, Driving, Electrician, Helper</span>
+                                <FaTools className="resume-icon" /> <span>{skills}</span>
                             </div>
                             <div className="resume-item">
-                                <FaMapMarkerAlt className="resume-icon" /> <span>Pune, Maharashtra</span>
+                                <FaMapMarkerAlt className="resume-icon" /> <span>{userProfile?.location || "Pune, India"}</span>
                             </div>
                         </div>
 
                         <div className="resume-footer">
                             <div className="resume-rating">
                                 <div className="worker-stars">
-                                    <FaStar color="#F4B400" /><FaStar color="#F4B400" /><FaStar color="#F4B400" /><FaStar color="#F4B400" /><FaStar color="#F4B400" style={{ opacity: 0.5 }} />
+                                    {[...Array(5)].map((_, i) => (
+                                        <FaStar key={i} color={i < Math.round(stats.rating) ? "#F4B400" : "#ccc"} />
+                                    ))}
                                 </div>
-                                <span style={{ fontWeight: '700', marginLeft: '8px' }}>4.8</span>
-                                <span style={{ color: '#777', fontSize: '0.9rem', marginLeft: '4px' }}>(162 Reviews)</span>
+                                <span style={{ fontWeight: '700', marginLeft: '8px' }}>{stats.rating}</span>
+                                <span style={{ color: '#777', fontSize: '0.9rem', marginLeft: '4px' }}>({stats.reviewsCount} Reviews)</span>
                             </div>
                             <button className="view-resume-btn">View Resume</button>
                         </div>
@@ -86,26 +153,24 @@ const WorkerQRCode = () => {
                     <div className="qr-info-card">
                         <h3 className="qr-card-title">Recent Reviews</h3>
                         <div className="mini-reviews-list">
-                            <div className="mini-review-item">
-                                <img src="https://randomuser.me/api/portraits/women/44.jpg" className="mini-review-pic" />
-                                <div>
-                                    <p className="mini-review-text"><strong>Anita Sharma</strong>, Great work, very reliable!</p>
-                                    <div className="worker-stars sm-stars">
-                                        <FaStar color="#F4B400" /><FaStar color="#F4B400" /><FaStar color="#F4B400" /><FaStar color="#F4B400" /><FaStar color="#F4B400" />
-                                        <span className="mini-time">2 days ago</span>
+                            {reviews.length === 0 ? (
+                                <div style={{ color: '#888', fontStyle: 'italic', padding: '10px 0' }}>No reviews yet.</div>
+                            ) : (
+                                reviews.map((rev, idx) => (
+                                    <div className="mini-review-item" key={idx}>
+                                        <img src={rev.reviewerPic || "https://randomuser.me/api/portraits/men/99.jpg"} className="mini-review-pic" alt="Reviewer" />
+                                        <div>
+                                            <p className="mini-review-text"><strong>{rev.reviewerName}</strong>, {rev.comment}</p>
+                                            <div className="worker-stars sm-stars">
+                                                {[...Array(5)].map((_, i) => (
+                                                    <FaStar key={i} color={i < Math.floor(rev.rating) ? "#F4B400" : "#ccc"} />
+                                                ))}
+                                                <span className="mini-time">Recent</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div className="mini-review-item">
-                                <img src="https://randomuser.me/api/portraits/men/32.jpg" className="mini-review-pic" />
-                                <div>
-                                    <p className="mini-review-text"><strong>Vikram Singh</strong>, Punctual and skilled</p>
-                                    <div className="worker-stars sm-stars">
-                                        <FaStar color="#F4B400" /><FaStar color="#F4B400" /><FaStar color="#F4B400" /><FaStar color="#F4B400" /><FaStar color="#F4B400" />
-                                        <span className="mini-time">3 days ago</span>
-                                    </div>
-                                </div>
-                            </div>
+                                ))
+                            )}
                         </div>
                         <div style={{ textAlign: 'right', marginTop: '12px' }}>
                             <button className="view-more-sm-btn">View More</button>

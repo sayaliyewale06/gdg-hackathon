@@ -1,90 +1,100 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './WorkerDashboard.css'; // Reuse existing styles + new ones
-import { FaSearch, FaBriefcase, FaMapMarkerAlt, FaCheckCircle, FaStar, FaCar, FaWalking, FaBox, FaHardHat } from 'react-icons/fa';
+import { DB } from './lib/db';
+import { useAuth } from './context/AuthContext';
+import { FaSearch, FaBriefcase, FaMapMarkerAlt, FaCheckCircle, FaStar, FaCar, FaWalking, FaBox, FaHardHat, FaClock, FaTimesCircle } from 'react-icons/fa';
+
+import { toast } from 'react-hot-toast';
 
 const WorkerMyJobs = () => {
-    const [activeTab, setActiveTab] = useState('This Week');
+    const { currentUser } = useAuth();
+    const navigate = useNavigate();
+    const [jobs, setJobs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('All Time');
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const jobs = [
-        {
-            date: 'April 28',
-            title: 'Packing Help',
-            location: 'Baner',
-            icon: <FaBox />,
-            amount: '₹700',
-            status: 'Shift Done',
-            statusType: 'success', // or 'neutral'
-            employer: 'Vikram Singh',
-            rating: 4.8,
-            reviews: 95,
-            img: 'https://randomuser.me/api/portraits/men/32.jpg'
-        },
-        {
-            date: 'April 27',
-            title: 'Masonry Work',
-            location: 'Hinjewadi',
-            icon: <FaBox />, // Using box as general placeholder if specific icon not available, or reuse FaBriefcase
-            amount: '₹950',
-            status: 'Completed',
-            statusType: 'success',
-            employer: 'Rahul Agrawal',
-            rating: 4.2,
-            reviews: 125,
-            img: 'https://randomuser.me/api/portraits/men/45.jpg'
-        },
-        {
-            date: 'April 26',
-            title: 'Driving Job',
-            location: 'Shivajinagar',
-            icon: <FaCar />,
-            amount: '₹800',
-            status: 'Ride Complete',
-            statusType: 'success',
-            employer: 'Vishal More',
-            rating: 5.0,
-            reviews: 53,
-            img: 'https://randomuser.me/api/portraits/men/22.jpg'
-        },
-        {
-            date: 'April 25',
-            title: 'Helper Job',
-            location: 'Baner',
-            icon: <FaWalking />,
-            amount: '₹700',
-            status: 'Help Done',
-            statusType: 'success',
-            employer: 'Akash Patel',
-            rating: 4.5,
-            reviews: 89,
-            img: 'https://randomuser.me/api/portraits/men/64.jpg'
-        },
-        {
-            date: 'April 24',
-            title: 'Masonry Work',
-            location: 'Shivajinagar',
-            icon: <FaHardHat />,
-            amount: '₹950',
-            status: 'Completed',
-            statusType: 'success',
-            employer: 'Vikram Sanap',
-            rating: 4.6,
-            reviews: 61,
-            img: 'https://randomuser.me/api/portraits/men/76.jpg'
-        },
-        {
-            date: 'April 24',
-            title: 'Masonry Work',
-            location: 'Pune',
-            icon: <FaHardHat />,
-            amount: '₹700',
-            status: 'Completed',
-            statusType: 'success',
-            employer: 'Vikram Sanap',
-            rating: 4.6,
-            reviews: 61,
-            img: 'https://randomuser.me/api/portraits/men/76.jpg'
+    const filteredJobs = jobs.filter(job => {
+        const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            job.hirerName.toLowerCase().includes(searchQuery.toLowerCase());
+
+        let matchesTime = true;
+        const jobDate = new Date(job.createdAt);
+        const now = new Date();
+
+        if (activeTab === 'This Week') {
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(now.getDate() - 7);
+            matchesTime = jobDate >= oneWeekAgo;
+        } else if (activeTab === 'This Month') {
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setDate(now.getDate() - 30);
+            matchesTime = jobDate >= oneMonthAgo;
         }
-    ];
+
+        return matchesSearch && matchesTime;
+    });
+
+    useEffect(() => {
+        const fetchJobHistory = async () => {
+            if (currentUser?.uid) {
+                try {
+                    const myApplications = await DB.applications.getByWorker(currentUser.uid);
+
+                    const historyPromises = myApplications.map(async (app) => {
+                        // Fetch Job
+                        const job = await DB.jobs.get(app.jobId);
+
+                        // Fetch Hirer (Use app.hirerId or job.hirerId)
+                        const targetHirerId = app.hirerId || job?.hirerId;
+                        const hirer = targetHirerId ? await DB.users.get(targetHirerId) : null;
+
+                        return {
+                            ...app,
+                            jobTitle: job?.title || 'Job Unavailable',
+                            jobLocation: job?.location || 'Unknown Location',
+                            jobWage: job?.wage || '0',
+                            hirerId: targetHirerId,
+                            hirerName: hirer?.displayName || job?.hirerName || 'Unknown Employer',
+                            hirerPic: hirer?.photoURL || job?.hirerPic,
+                            hirerRating: hirer?.rating || job?.hirerRating,
+                            category: job?.category,
+                            createdAt: app.appliedAt || app.createdAt || new Date().toISOString()
+                        };
+                    });
+
+                    const historyData = await Promise.all(historyPromises);
+
+                    // Sort by newest application
+                    const sortedHistory = historyData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                    setJobs(sortedHistory);
+                } catch (error) {
+                    console.error("Error fetching job history:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchJobHistory();
+    }, [currentUser]);
+
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'completed':
+                return { text: 'Completed', color: '#047857', bg: '#e6fffa', icon: <FaCheckCircle /> };
+            case 'accepted':
+                return { text: 'Accepted', color: '#0369a1', bg: '#e0f2fe', icon: <FaCheckCircle /> };
+            case 'in_progress':
+                return { text: 'In Progress', color: '#b45309', bg: '#fffbeb', icon: <FaClock /> };
+            case 'rejected':
+                return { text: 'Rejected', color: '#be123c', bg: '#ffe4e6', icon: <FaTimesCircle /> };
+            default:
+                return { text: 'Pending', color: '#d97706', bg: '#fef3c7', icon: <FaClock /> };
+        }
+    };
 
     return (
         <div className="earnings-container"> {/* Reuse container for padding/layout */}
@@ -113,13 +123,21 @@ const WorkerMyJobs = () => {
                     >
                         This Month
                     </button>
-                    <button className="filter-tab filter-tab-dropdown">
-                        All Time <span>▼</span>
+                    <button
+                        className={`filter-tab ${activeTab === 'All Time' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('All Time')}
+                    >
+                        All Time
                     </button>
                 </div>
                 <div className="search-box">
                     <FaSearch />
-                    <input type="text" placeholder="Search" />
+                    <input
+                        type="text"
+                        placeholder="Search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                 </div>
             </div>
 
@@ -134,49 +152,103 @@ const WorkerMyJobs = () => {
             </div>
 
             {/* Job Rows */}
-            {jobs.map((job, index) => (
-                <div className="job-row" key={index}>
-                    {/* LEFT SECTION: Date, Icon, Details */}
-                    <div className="job-section-left">
-                        <div className="jr-date">{job.date}</div>
-                        <div className="jr-icon-box">
-                            {job.title.includes('Masonry') ? <FaHardHat /> : job.icon}
-                        </div>
-                        <div className="jr-details">
-                            <h4>{job.title}</h4>
-                            <div className="jr-location">
-                                <FaMapMarkerAlt style={{ fontSize: '0.7em' }} /> {job.location}
-                            </div>
-                        </div>
-                    </div>
+            {loading ? (
+                <div style={{ padding: '20px', textAlign: 'center' }}>Loading history...</div>
+            ) : filteredJobs.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>No job history found.</div>
+            ) : (
+                filteredJobs.map((job) => {
+                    const statusInfo = getStatusBadge(job.status);
+                    const formattedDate = new Date(job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-                    {/* CENTER SECTION: Price, Earned Badge */}
-                    <div className="job-section-center">
-                        <span className="jr-amount">{job.amount}</span>
-                        <div className="status-badge status-completed">
-                            <span>{job.amount} Earned</span>
-                        </div>
-                    </div>
-
-                    {/* RIGHT SECTION: Status, Profile, Message */}
-                    <div className="job-section-right">
-                        <div className="status-text">
-                            <FaCheckCircle style={{ fontSize: '0.8rem' }} /> {job.status}
-                        </div>
-                        <div className="emp-profile">
-                            <img src={job.img} alt={job.employer} />
-                            <div className="emp-name">
-                                <h5>{job.employer}</h5>
-                                <div className="worker-stars" style={{ fontSize: '0.7rem' }}>
-                                    <FaStar /><FaStar /><FaStar /><FaStar />
-                                    <span style={{ color: '#888', fontWeight: '400', marginLeft: '4px' }}>{job.reviews} Reviews</span>
+                    return (
+                        <div className="job-row" key={job.id}>
+                            {/* LEFT SECTION: Date, Icon, Details */}
+                            <div className="job-section-left">
+                                <div className="jr-date">{formattedDate}</div>
+                                <div className="jr-icon-box">
+                                    <FaBriefcase />
+                                </div>
+                                <div className="jr-details">
+                                    <h4>{job.jobTitle}</h4>
+                                    <div className="jr-location">
+                                        <FaMapMarkerAlt style={{ fontSize: '0.7em' }} /> {job.jobLocation}
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* CENTER SECTION: Price, Earned Badge */}
+                            <div className="job-section-center">
+                                <span className="jr-amount">₹{job.jobWage}</span>
+                                <div className="status-badge" style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
+                                    <span>{statusInfo.text}</span>
+                                </div>
+                            </div>
+
+                            {/* RIGHT SECTION: Status, Profile, Message */}
+                            <div className="job-section-right">
+                                <div className="status-text" style={{ color: statusInfo.color }}>
+                                    {statusInfo.icon} {statusInfo.text}
+                                </div>
+                                <div className="emp-profile">
+                                    <img src={job.hirerPic || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"} alt={job.hirerName} />
+                                    <div className="emp-name">
+                                        <h5>{job.hirerName}</h5>
+                                        <div className="worker-stars" style={{ fontSize: '0.7rem' }}>
+                                            {[...Array(5)].map((_, i) => (
+                                                <FaStar
+                                                    key={i}
+                                                    color={i < (job.hirerRating || 0) ? "#F4B400" : "#E0E0E0"}
+                                                />
+                                            ))}
+                                            <span style={{ color: '#888', fontWeight: '400', marginLeft: '4px' }}>
+                                                {job.hirerRating ? job.hirerRating.toFixed(1) : 'New'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    className="message-btn"
+                                    onClick={() => {
+                                        if (!job.hirerId) {
+                                            toast.error("Cannot message: This job record is missing employer details.");
+                                            return;
+                                        }
+                                        navigate('/worker-dashboard', {
+                                            state: {
+                                                view: 'messages',
+                                                selectedConversation: job.hirerId,
+                                                employerName: job.hirerName,
+                                                employerPic: job.hirerPic
+                                            }
+                                        });
+                                    }}
+                                >
+                                    Message
+                                </button>
+                                <button
+                                    className="message-btn"
+                                    style={{ backgroundColor: '#fff', color: '#be123c', border: '1px solid #be123c', marginLeft: '8px' }}
+                                    onClick={async () => {
+                                        // window.confirm removed for snappy UI as requested
+                                        try {
+                                            await DB.applications.delete(job.id);
+                                            // Optimistic update
+                                            setJobs(prev => prev.filter(j => j.id !== job.id));
+                                            toast.success("Application withdrawn successfully");
+                                        } catch (err) {
+                                            console.error("Failed to withdraw:", err);
+                                            toast.error("Failed to withdraw application.");
+                                        }
+                                    }}
+                                >
+                                    Withdraw
+                                </button>
+                            </div>
                         </div>
-                        <button className="message-btn">Message</button>
-                    </div>
-                </div>
-            ))}
+                    );
+                })
+            )}
 
         </div>
     );

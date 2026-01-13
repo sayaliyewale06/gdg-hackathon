@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     ChevronRight,
@@ -9,79 +9,74 @@ import {
 } from 'lucide-react';
 import './Notifications.css';
 
+import { useAuth } from './context/AuthContext';
+import { DB } from './lib/db';
+
 const Notifications = () => {
+    const { currentUser } = useAuth();
     const navigate = useNavigate();
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // Mock Data
-    const [notifications, setNotifications] = useState([
-        {
-            id: 1,
-            type: 'urgent',
-            title: 'Two Jobs Need Your Urgent Attention',
-            description: '2 active jobs have been marked as urgent by the worker.',
-            time: '5 days ago',
-            unread: true,
-            icon: <AlertCircle size={24} />,
-            iconClass: 'icon-urgent',
-            badge: 'URGENT'
-        },
-        {
-            id: 2,
-            type: 'completed',
-            title: 'Mohan Das completed his assignment',
-            description: 'Electrical Repair Work in Noida has been completed and is ready for review.',
-            time: '1 week ago',
-            unread: true,
-            icon: <CheckCircle size={24} />,
-            iconClass: 'icon-completed'
-        },
-        {
-            id: 3,
-            type: 'new_applicants',
-            title: 'New Applicants For Driver Job',
-            description: '4 new applicants have applied for the Packing & Movers job in Wakad, Pune.',
-            time: '2 weeks ago',
-            unread: true,
-            icon: <FileText size={24} />,
-            iconClass: 'icon-new-applicant'
-        },
-        {
-            id: 4,
-            type: 'urgent_req',
-            title: 'Urgent Requirement in Karol Bagh, Delhi',
-            description: 'A Helper job in Karol Bagh, Delhi is listed as urgent.',
-            time: '3 weeks ago',
-            unread: false,
-            img: 'https://randomuser.me/api/portraits/men/11.jpg' // Vinod Patel mock
-        },
-        {
-            id: 5,
-            type: 'shortlisted',
-            title: 'Arjun Verma Shortlisted',
-            description: 'Auto Driver Arjun Verma has been added to at shortlisted workers list.',
-            time: '1 month ago',
-            unread: false,
-            img: 'https://randomuser.me/api/portraits/men/33.jpg'
-        },
-        {
-            id: 6,
-            type: 'generic',
-            title: 'Deepals Yadav',
-            description: 'Auto Driver Arjun Verma has been added to shortlisted workers list.',
-            time: '1 month ago',
-            unread: false,
-            img: 'https://randomuser.me/api/portraits/men/52.jpg'
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            if (currentUser?.uid) {
+                try {
+                    const data = await DB.notifications.getByUser(currentUser.uid);
+                    // Map generic data to UI format
+                    const formatted = data.map(n => ({
+                        id: n.id,
+                        type: n.type,
+                        title: n.title,
+                        description: n.subtitle, // Using subtitle as description
+                        time: new Date(n.createdAt).toLocaleDateString(), // Simple date for now
+                        unread: !n.read,
+                        // Determine icon based on type
+                        icon: getIconForType(n.type),
+                        iconClass: `icon-${n.type}`,
+                        badge: n.type === 'urgent' ? 'URGENT' : null,
+                        img: n.data?.senderPic || null // if we store senderPic in data
+                    }));
+                    setNotifications(formatted);
+                } catch (error) {
+                    console.error("Error fetching notifications:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchNotifications();
+    }, [currentUser]);
+
+    const getIconForType = (type) => {
+        switch (type) {
+            case 'urgent': return <AlertCircle size={24} />;
+            case 'completed': return <CheckCircle size={24} />;
+            case 'application': return <FileText size={24} />;
+            default: return <FileText size={24} />;
         }
-    ]);
-
-    const handleMarkAsRead = (id) => {
-        setNotifications(prev => prev.map(n =>
-            n.id === id ? { ...n, unread: false } : n
-        ));
     };
 
-    const handleClearAll = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+    const handleMarkAsRead = async (id) => {
+        try {
+            await DB.notifications.markAsRead(id);
+            setNotifications(prev => prev.map(n =>
+                n.id === id ? { ...n, unread: false } : n
+            ));
+        } catch (error) {
+            console.error("Error marking read:", error);
+        }
+    };
+
+    const handleClearAll = async () => {
+        if (currentUser?.uid) {
+            try {
+                await DB.notifications.markAllRead(currentUser.uid);
+                setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+            } catch (error) {
+                console.error("Error clearing all:", error);
+            }
+        }
     };
 
     return (
@@ -105,51 +100,61 @@ const Notifications = () => {
 
             {/* Notifications List */}
             <div className="notifications-list">
-                {notifications.map(notification => (
-                    <div
-                        key={notification.id}
-                        className={`notification-card ${notification.unread ? 'unread' : ''}`}
-                    >
-                        {/* Icon/Image */}
-                        <div className={`notification-icon-container ${notification.iconClass || ''}`}>
-                            {notification.img ? (
-                                <img src={notification.img} alt="Profile" className="notification-img" />
-                            ) : (
-                                notification.icon
-                            )}
-                        </div>
+                {loading ? (
+                    <div style={{ padding: '40px', textAlign: 'center' }}>Loading notifications...</div>
+                ) : (
+                    <>
+                        {notifications.length === 0 ? (
+                            <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>No notifications found.</div>
+                        ) : (
+                            notifications.map(notification => (
+                                <div
+                                    key={notification.id}
+                                    className={`notification-card ${notification.unread ? 'unread' : ''}`}
+                                >
+                                    {/* Icon/Image */}
+                                    <div className={`notification-icon-container ${notification.iconClass || ''}`}>
+                                        {notification.img ? (
+                                            <img src={notification.img} alt="Profile" className="notification-img" />
+                                        ) : (
+                                            notification.icon
+                                        )}
+                                    </div>
 
-                        {/* Content */}
-                        <div className="notification-content">
-                            <div className="notification-header-row">
-                                <h3 className="notification-title">
-                                    {notification.badge && (
-                                        <span className="badge-urgent"><AlertCircle size={12} /> {notification.badge}</span>
-                                    )}
-                                    {notification.title}
-                                </h3>
+                                    {/* Content */}
+                                    <div className="notification-content">
+                                        <div className="notification-header-row">
+                                            <h3 className="notification-title">
+                                                {notification.badge && (
+                                                    <span className="badge-urgent"><AlertCircle size={12} /> {notification.badge}</span>
+                                                )}
+                                                {notification.title}
+                                            </h3>
 
-                                <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <span className="notification-time">{notification.time}</span>
-                                    <button className="menu-trigger"><MoreHorizontal size={18} /></button>
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                <span className="notification-time">{notification.time}</span>
+                                                <button className="menu-trigger"><MoreHorizontal size={18} /></button>
+                                            </div>
+                                        </div>
+
+                                        <p className="notification-description">{notification.description}</p>
+
+                                        {notification.unread && (
+                                            <div className="notification-actions">
+                                                <button
+                                                    className="btn-mark-read"
+                                                    onClick={() => handleMarkAsRead(notification.id)}
+                                                >
+                                                    Mark as Read
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-
-                            <p className="notification-description">{notification.description}</p>
-
-                            {notification.unread && (
-                                <div className="notification-actions">
-                                    <button
-                                        className="btn-mark-read"
-                                        onClick={() => handleMarkAsRead(notification.id)}
-                                    >
-                                        Mark as Read
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
+                            ))
+                        )}
+                    </>
+                )}
             </div>
 
             {/* Pagination */}

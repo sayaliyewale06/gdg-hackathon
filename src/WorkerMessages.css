@@ -1,0 +1,372 @@
+/* WorkerMessages.css */
+.worker-messages-layout {
+    display: flex;
+    height: calc(100vh - 80px);
+    /* Adjust based on dashboard header height */
+    background-color: #f8f9fa;
+    overflow: hidden;
+}
+
+/* --- Left Column (Conversations List) --- */
+.wm-conversations-list {
+    width: 320px;
+    background: #fff;
+    border-right: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+}
+
+.wm-search-header {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.wm-search-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.wm-search-icon {
+    color: #888;
+    margin-right: 8px;
+}
+
+.wm-search-input {
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.wm-list-scroll {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.wm-convo-item {
+    display: flex;
+    padding: 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f9f9f9;
+    transition: background 0.2s;
+}
+
+.wm-convo-item:hover,
+.wm-convo-item.active {
+    background-color: #f0fdf4;
+    /* Very light green/teal */
+}
+
+.wm-convo-img-wrapper {
+    position: relative;
+    margin-right: 12px;
+}
+
+.wm-convo-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.wm-status-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background-color: #22c55e;
+    border: 2px solid #fff;
+    border-radius: 50%;
+}
+
+.wm-convo-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.wm-convo-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.wm-convo-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wm-convo-time {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.wm-convo-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wm-convo-preview {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.wm-unread-badge {
+    background-color: #0f766e;
+    color: white;
+    font-size: 0.7rem;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Middle Column (Chat Window) --- */
+.wm-chat-window {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #fafbfc;
+}
+
+.wm-chat-header {
+    height: 70px;
+    padding: 0 24px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.wm-chat-header-user {
+    display: flex;
+    align-items: center;
+}
+
+.wm-header-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+}
+
+.wm-header-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wm-badge-online {
+    background-color: #dcfce7;
+    color: #166534;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.wm-header-phone {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.wm-icon-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    margin-left: 8px;
+}
+
+.wm-icon-btn:hover {
+    background-color: #f3f4f6;
+}
+
+.wm-messages-area {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.wm-message-row {
+    display: flex;
+    width: 100%;
+}
+
+.wm-message-row.incoming {
+    justify-content: flex-start;
+}
+
+.wm-message-row.outgoing {
+    justify-content: flex-end;
+}
+
+.wm-bubble {
+    max-width: 65%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    position: relative;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #1f2937;
+    /* Dark readable text */
+}
+
+.wm-message-row.incoming .wm-bubble {
+    background-color: #fff;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    border-bottom-left-radius: 2px;
+}
+
+.wm-message-row.outgoing .wm-bubble {
+    background-color: #dcfce7;
+    /* Light teal/green match for 'Worker Reply' instructions (darker teal requested but usually better readability with light) - user asked for "darker teal background". Let's approximate. */
+    background-color: #e0f2f1;
+    /* Using a distinct teal tint */
+    border-bottom-right-radius: 2px;
+}
+
+.wm-bubble-time {
+    display: block;
+    font-size: 0.65rem;
+    color: #888;
+    margin-top: 4px;
+    text-align: right;
+}
+
+.wm-input-area {
+    padding: 16px 24px;
+    background: #fff;
+    border-top: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wm-input-field {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 24px;
+    outline: none;
+    background-color: #f9fafb;
+    color: #333333;
+    /* Dark text for input */
+}
+
+.wm-input-field:focus {
+    border-color: #bbb;
+    background-color: #fff;
+}
+
+.wm-input-actions {
+    display: flex;
+    gap: 8px;
+    color: #666;
+}
+
+.wm-action-icon {
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.wm-action-icon:hover {
+    opacity: 1;
+}
+
+.wm-send-btn {
+    background-color: #0d9488;
+    /* Teal */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.wm-send-btn:hover {
+    background-color: #0f766e;
+}
+
+/* --- Right Column (Tips Sidebar) --- */
+.wm-tips-sidebar {
+    width: 280px;
+    padding: 24px;
+    background: #fff;
+    border-left: 1px solid #eee;
+}
+
+.wm-tips-card {
+    background-color: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.wm-tips-title {
+    margin: 0 0 16px 0;
+    font-size: 1rem;
+    color: #334155;
+}
+
+.wm-tips-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wm-tips-list li {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.wm-check-icon {
+    color: #22c55e;
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.wm-no-chat {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-size: 1.1rem;
+}

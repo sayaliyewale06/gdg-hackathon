@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import './WorkerDashboard.css';
+import { DB } from './lib/db';
 import WorkerEarnings from './WorkerEarnings';
 import WorkerMyJobs from './WorkerMyJobs';
 import WorkerReviews from './WorkerReviews';
@@ -9,12 +10,86 @@ import WorkerQRCode from './WorkerQRCode';
 import WorkerActiveJobs from './WorkerActiveJobs';
 import WorkerFindJobs from './WorkerFindJobs';
 import WorkerNotifications from './WorkerNotifications';
-import { FaUserCircle, FaSearch, FaBriefcase, FaStar, FaWallet, FaMapMarkerAlt, FaBell, FaUsers, FaPlus, FaCheckCircle, FaGlobe, FaArrowUp, FaQrcode } from 'react-icons/fa';
+import WorkerMessages from './WorkerMessages';
+import { FaUserCircle, FaSearch, FaBriefcase, FaStar, FaWallet, FaMapMarkerAlt, FaBell, FaUsers, FaPlus, FaCheckCircle, FaGlobe, FaArrowUp, FaQrcode, FaCommentDots } from 'react-icons/fa';
 
 const WorkerDashboard = () => {
     const { currentUser, userRole, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [activeView, setActiveView] = useState('dashboard');
+
+    useEffect(() => {
+        if (location.state?.view) {
+            setActiveView(location.state.view);
+        }
+    }, [location.state]);
+
+    const [stats, setStats] = useState({
+        earnings: 0,
+        activeJobs: 0,
+        applications: 0
+    });
+    const [recentJobs, setRecentJobs] = useState([]);
+    const [myRecentJobs, setMyRecentJobs] = useState([]);
+    const [recentReviews, setRecentReviews] = useState([]);
+    const [userProfile, setUserProfile] = useState(null);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (currentUser?.uid) {
+                try {
+                    const [allJobs, myApplications, myReviews, userDoc] = await Promise.all([
+                        DB.jobs.getAll(),
+                        DB.applications.getByWorker(currentUser.uid),
+                        DB.reviews.getByTargetUser(currentUser.uid),
+                        DB.users.get(currentUser.uid)
+                    ]);
+
+                    // Stats
+                    const activeApps = myApplications.filter(a => ['accepted', 'in_progress'].includes(a.status));
+                    const completedApps = myApplications.filter(a => a.status === 'completed');
+                    // Calculate earnings (assuming wage is in the job details attached to application, or we need to fetch jobs)
+                    // For now, let's assume we need to join. But for speed, let's just count completed for now or mock the calc if wage isn't in app.
+                    // Actually, ApplicationSchema doesn't have wage. We should probably fetch job details.
+                    // For simply MVP, let's assume a hardcoded average or just 0 if no logic yet.
+                    // Better: Fetch job details for completed apps.
+                    let totalEarnings = 0;
+                    // We can do a quick lookup if we have all jobs, or just fetch needed.
+                    // Since we fetched allJobs, we can map.
+                    const jobsMap = new Map(allJobs.map(j => [j.id, j]));
+
+                    completedApps.forEach(app => {
+                        const job = jobsMap.get(app.jobId);
+                        if (job) totalEarnings += job.wage;
+                    });
+
+                    setStats({
+                        earnings: totalEarnings,
+                        activeJobs: activeApps.length,
+                        applications: myApplications.length
+                    });
+
+                    if (userDoc) setUserProfile(userDoc);
+
+                    // Recent Listings (Open jobs not applied to?)
+                    // Just show all open jobs
+                    const openJobs = allJobs.filter(j => j.status === 'open').slice(0, 4);
+                    setRecentJobs(openJobs);
+
+                    // My Recent Jobs (Sidebar)
+                    setMyRecentJobs(completedApps.slice(0, 2).map(app => ({ ...app, job: jobsMap.get(app.jobId) })));
+
+                    // Recent Reviews
+                    setRecentReviews(myReviews.slice(0, 2));
+
+                } catch (error) {
+                    console.error("Error fetching worker data:", error);
+                }
+            }
+        };
+        fetchData();
+    }, [currentUser]);
 
     useEffect(() => {
         // Redirect if not authenticated or wrong role
@@ -89,8 +164,8 @@ const WorkerDashboard = () => {
                         </div>
                         <div className="profile-details">
                             <h2>{currentUser.displayName || "Worker"}</h2>
-                            <p className="role">Top Worker</p>
-                            <p className="phone">{currentUser.email || "+91 98765 43210"}</p>
+                            <p className="role">{userProfile?.status || "Verified Worker"}</p>
+                            <p className="phone">{userProfile?.phone || currentUser.email || "+91 98765 43210"}</p>
                         </div>
                     </div>
 
@@ -99,6 +174,7 @@ const WorkerDashboard = () => {
                         <a href="#" className={`menu-item ${activeView === 'findjobs' ? 'active' : ''}`} onClick={() => setActiveView('findjobs')}><FaSearch /> Find Jobs</a>
                         <a href="#" className={`menu-item ${activeView === 'activejobs' ? 'active' : ''}`} onClick={() => setActiveView('activejobs')}><FaBriefcase /> Active Jobs</a>
                         <a href="#" className={`menu-item ${activeView === 'myjobs' ? 'active' : ''}`} onClick={() => setActiveView('myjobs')}><FaUserCircle /> My Jobs</a>
+                        <a href="#" className={`menu-item ${activeView === 'messages' ? 'active' : ''}`} onClick={() => setActiveView('messages')}><FaCommentDots /> Messages</a>
                         <a href="#" className={`menu-item ${activeView === 'reviews' ? 'active' : ''}`} onClick={() => setActiveView('reviews')}><FaStar /> Reviews</a>
                         <a href="#" className={`menu-item ${activeView === 'qrcode' ? 'active' : ''}`} onClick={() => setActiveView('qrcode')}><FaQrcode /> My QR Code</a>
                         <a href="#" className={`menu-item ${activeView === 'earnings' ? 'active' : ''}`} onClick={() => setActiveView('earnings')}><FaWallet /> Earnings</a>
@@ -106,10 +182,10 @@ const WorkerDashboard = () => {
 
                     <div className="side-stats-panel" style={{ height: 'auto', padding: '20px' }}>
                         <div style={{ marginBottom: '8px', color: 'var(--secondary-text)', fontSize: '0.9rem' }}>Total Earnings</div>
-                        <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--primary-text)' }}>₹65,700</div>
+                        <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--primary-text)' }}>₹{stats.earnings}</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.9rem' }}>
                             <span style={{ color: 'var(--secondary-text)' }}>This Week</span>
-                            <span style={{ fontWeight: '600' }}>₹12,500</span>
+                            <span style={{ fontWeight: '600' }}>₹{stats.earnings > 0 ? stats.earnings : 0}</span>
                         </div>
                         <button className="sidebar-action-btn" style={{ marginTop: '20px' }}>Find Jobs</button>
                     </div>
@@ -131,7 +207,7 @@ const WorkerDashboard = () => {
                 </aside>
 
                 {/* Main Content Area (Center + Right) */}
-                <main className="main-content-area" style={{ display: ['earnings', 'myjobs', 'reviews', 'qrcode', 'activejobs', 'findjobs', 'notifications'].includes(activeView) ? 'block' : 'grid', width: '100%' }}>
+                <main className="main-content-area" style={{ display: ['earnings', 'myjobs', 'reviews', 'qrcode', 'activejobs', 'findjobs', 'notifications', 'messages'].includes(activeView) ? 'block' : 'grid', width: '100%' }}>
                     {activeView === 'earnings' && <WorkerEarnings />}
 
                     {activeView === 'activejobs' && <WorkerActiveJobs />}
@@ -145,6 +221,8 @@ const WorkerDashboard = () => {
                     {activeView === 'qrcode' && <WorkerQRCode />}
 
                     {activeView === 'notifications' && <WorkerNotifications />}
+
+                    {activeView === 'messages' && <WorkerMessages />}
 
                     {activeView === 'dashboard' && (
                         <>
@@ -167,7 +245,7 @@ const WorkerDashboard = () => {
                                         <div className="card-icon-box"><FaBriefcase /></div>
                                         <div className="card-text-content">
                                             <div className="card-title">Active Jobs</div>
-                                            <div className="card-value">8</div>
+                                            <div className="card-value">{stats.activeJobs}</div>
                                         </div>
                                     </div>
                                     <div
@@ -180,7 +258,7 @@ const WorkerDashboard = () => {
                                         <div className="card-icon-box"><FaWallet /></div>
                                         <div className="card-text-content">
                                             <div className="card-title">Earnings</div>
-                                            <div className="card-value">₹12,500</div>
+                                            <div className="card-value">₹{stats.earnings}</div>
                                         </div>
                                     </div>
                                     <div
@@ -192,8 +270,8 @@ const WorkerDashboard = () => {
                                     >
                                         <div className="card-icon-box"><FaUsers /></div>
                                         <div className="card-text-content">
-                                            <div className="card-title">Applicants</div>
-                                            <div className="card-value">32 <span>New</span></div>
+                                            <div className="card-title">Applications</div>
+                                            <div className="card-value">{stats.applications} <span>Sent</span></div>
                                         </div>
                                     </div>
 
@@ -235,78 +313,28 @@ const WorkerDashboard = () => {
                                     <h3>Recent Job Listings</h3>
                                 </div>
                                 <div className="hires-grid">
-                                    {/* Job Card 1 */}
-                                    <div className="hire-row-card">
-                                        <div className="worker-identity">
-                                            <div className="card-icon-box" style={{ background: '#EAE3DA', color: '#8C8177' }}><FaBriefcase /></div>
-                                            <div className="worker-details">
-                                                <h4>Electrician Needed</h4>
-                                                <span>Location: Sector 21, Noida</span>
+                                    {recentJobs.length === 0 ? (
+                                        <div style={{ padding: '20px', color: '#666' }}>No jobs found.</div>
+                                    ) : (
+                                        recentJobs.map(job => (
+                                            <div className="hire-row-card" key={job.id}>
+                                                <div className="worker-identity">
+                                                    <div className="card-icon-box" style={{ background: '#EAE3DA', color: '#8C8177' }}><FaBriefcase /></div>
+                                                    <div className="worker-details">
+                                                        <h4>{job.title}</h4>
+                                                        <span>Location: {job.location}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="worker-contact-info" style={{ textAlign: 'left', fontWeight: 'bold' }}>
+                                                    ₹{job.wage} / day
+                                                </div>
+                                                <div className="worker-contact-info" style={{ marginRight: 0 }}>
+                                                    {job.isUrgent && <span style={{ background: '#E6DCCD', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: '600' }}>Urgent</span>}
+                                                </div>
+                                                <button className="view-btn" style={{ backgroundColor: '#5d7e85' }}>Apply</button>
                                             </div>
-                                        </div>
-                                        <div className="worker-contact-info" style={{ textAlign: 'left', fontWeight: 'bold' }}>
-                                            ₹800 / day
-                                        </div>
-                                        <div className="worker-contact-info" style={{ marginRight: 0 }}>
-                                            <span style={{ background: '#E6DCCD', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: '600' }}>Urgent</span>
-                                        </div>
-                                        <button className="view-btn" style={{ backgroundColor: '#5d7e85' }}>Apply</button>
-                                    </div>
-
-                                    {/* Job Card 2 */}
-                                    <div className="hire-row-card">
-                                        <div className="worker-identity">
-                                            <div className="card-icon-box" style={{ background: '#EAE3DA', color: '#8C8177' }}><FaBriefcase /></div>
-                                            <div className="worker-details">
-                                                <h4>Driver Required</h4>
-                                                <span>Location: Karol Bagh, Delhi</span>
-                                            </div>
-                                        </div>
-                                        <div className="worker-contact-info" style={{ textAlign: 'left', fontWeight: 'bold' }}>
-                                            ₹600 / day
-                                        </div>
-                                        <div className="worker-contact-info" style={{ marginRight: 0 }}>
-                                            <span style={{ background: 'transparent', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: '600' }}></span>
-                                        </div>
-                                        <button className="view-btn" style={{ backgroundColor: '#5d7e85' }}>Apply</button>
-                                    </div>
-
-                                    {/* Job Card 3 */}
-                                    <div className="hire-row-card">
-                                        <div className="worker-identity">
-                                            <div className="card-icon-box" style={{ background: '#EAE3DA', color: '#8C8177' }}><FaBriefcase /></div>
-                                            <div className="worker-details">
-                                                <h4>Plumbing Work</h4>
-                                                <span>Location: Gurgaon</span>
-                                            </div>
-                                        </div>
-                                        <div className="worker-contact-info" style={{ textAlign: 'left', fontWeight: 'bold' }}>
-                                            ₹750 / day
-                                        </div>
-                                        <div className="worker-contact-info" style={{ marginRight: 0 }}>
-                                            <span style={{ background: 'transparent', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: '600' }}></span>
-                                        </div>
-                                        <button className="view-btn" style={{ backgroundColor: '#5d7e85' }}>Apply</button>
-                                    </div>
-
-
-                                    {/* Job Card 4 */}
-                                    <div className="hire-row-card">
-                                        <div className="worker-identity">
-                                            <div className="card-icon-box" style={{ background: '#EAE3DA', color: '#8C8177' }}><FaBriefcase /></div>
-                                            <div className="worker-details">
-                                                <h4>Helper Needed</h4>
-                                                <span>Location: Pune</span>
-                                            </div>
-                                        </div>
-                                        <div className="worker-contact-info" style={{ textAlign: 'left', fontWeight: 'bold' }}>
-                                            ₹550 / day
-                                        </div>
-                                        <div className="worker-contact-info" style={{ marginRight: 0 }}>
-                                            <span style={{ background: 'transparent', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: '600' }}></span>
-                                        </div>
-                                        <button className="view-btn" style={{ backgroundColor: '#5d7e85' }}>Apply</button>
-                                    </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
 
@@ -318,27 +346,22 @@ const WorkerDashboard = () => {
                                         <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--primary-text)' }}>My Recent Jobs</h3>
                                     </div>
                                     <div className="compact-hires-list">
-                                        <div className="compact-hire-card">
-                                            <div className="compact-card-header">
-                                                <div className="card-icon-box" style={{ width: '40px', height: '40px' }}><FaBriefcase /></div>
-                                                <div className="compact-info">
-                                                    <h4>Masonry Work</h4>
-                                                    <span style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>Completed in Hinjewadi</span>
+                                        {myRecentJobs.length === 0 ? (
+                                            <div style={{ fontSize: '0.8rem', color: '#888' }}>No completed jobs yet.</div>
+                                        ) : (
+                                            myRecentJobs.map(app => (
+                                                <div className="compact-hire-card" key={app.id}>
+                                                    <div className="compact-card-header">
+                                                        <div className="card-icon-box" style={{ width: '40px', height: '40px' }}><FaBriefcase /></div>
+                                                        <div className="compact-info">
+                                                            <h4>{app.jobTitle || app.job?.title || "Job"}</h4>
+                                                            <span style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>Completed</span>
+                                                        </div>
+                                                        <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>₹{app.job?.wage}</div>
+                                                    </div>
                                                 </div>
-                                                <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>₹950</div>
-                                            </div>
-                                        </div>
-
-                                        <div className="compact-hire-card">
-                                            <div className="compact-card-header">
-                                                <div className="card-icon-box" style={{ width: '40px', height: '40px' }}><FaBriefcase /></div>
-                                                <div className="compact-info">
-                                                    <h4>Packing Help</h4>
-                                                    <span style={{ fontSize: '0.8rem', color: 'var(--secondary-text)' }}>Shift Done in Baner</span>
-                                                </div>
-                                                <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>₹700</div>
-                                            </div>
-                                        </div>
+                                            ))
+                                        )}
                                         <button
                                             className="view-all-button"
                                             onClick={() => setActiveView('myjobs')}
@@ -355,33 +378,25 @@ const WorkerDashboard = () => {
                                     </div>
 
                                     <div className="compact-hires-list">
-                                        <div className="compact-hire-card">
-                                            <div style={{ display: 'flex', gap: '12px' }}>
-                                                <img src="https://randomuser.me/api/portraits/women/44.jpg" className="compact-pic" alt="Reviewer" />
-                                                <div className="compact-info">
-                                                    <h4 style={{ fontSize: '0.9rem' }}>Anita Sharma</h4>
-                                                    <div className="worker-stars" style={{ fontSize: '0.8rem' }}>
-                                                        <FaStar /> <FaStar /> <FaStar /> <FaStar /> <FaStar />
-                                                        <span style={{ color: 'var(--secondary-text)', marginLeft: '4px' }}>2 days ago</span>
-                                                    </div>
-                                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--primary-text)' }}>"Great work, very reliable"</p>
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        <div className="compact-hire-card">
-                                            <div style={{ display: 'flex', gap: '12px' }}>
-                                                <img src="https://randomuser.me/api/portraits/men/32.jpg" className="compact-pic" alt="Reviewer" />
-                                                <div className="compact-info">
-                                                    <h4 style={{ fontSize: '0.9rem' }}>Vikram Singh</h4>
-                                                    <div className="worker-stars" style={{ fontSize: '0.8rem' }}>
-                                                        <FaStar /> <FaStar /> <FaStar /> <FaStar /> <span style={{ color: '#ccc' }}><FaStar /></span>
-                                                        <span style={{ color: 'var(--secondary-text)', marginLeft: '4px' }}>3 days ago</span>
+
+                                        {recentReviews.length === 0 ? (
+                                            <div style={{ fontSize: '0.8rem', color: '#888' }}>No reviews yet.</div>
+                                        ) : (
+                                            recentReviews.map(review => (
+                                                <div className="compact-hire-card" key={review.id}>
+                                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                                        <div className="circle-avatar" style={{ width: 30, height: 30, background: '#eee', borderRadius: '50%' }}></div>
+                                                        <div className="compact-info">
+                                                            <div className="worker-stars" style={{ fontSize: '0.8rem' }}>
+                                                                {[...Array(review.rating)].map((_, i) => <FaStar key={i} color="#F4B400" />)}
+                                                            </div>
+                                                            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--primary-text)' }}>"{review.comment}"</p>
+                                                        </div>
                                                     </div>
-                                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--primary-text)' }}>"Punctual and skilled"</p>
                                                 </div>
-                                            </div>
-                                        </div>
+                                            ))
+                                        )}
                                         <button
                                             className="view-all-button"
                                             onClick={() => setActiveView('reviews')}

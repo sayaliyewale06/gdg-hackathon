@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import { DB } from './lib/db';
 import './WorkerDashboard.css';
 import './WorkerFindJobs.css';
 import {
@@ -13,65 +16,93 @@ import {
 } from 'react-icons/fa';
 
 const WorkerFindJobs = () => {
+    const { currentUser } = useAuth();
+    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
+    const [jobs, setJobs] = useState([]);
+    const [filteredJobs, setFilteredJobs] = useState([]);
+    const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+    const [loading, setLoading] = useState(true);
+    // const [applyingId, setApplyingId] = useState(null); // Unused or can be removed if strictly following plan
+    // const [selectedJob, setSelectedJob] = useState(null); // Removed
 
-    const jobs = [
-        {
-            id: 1,
-            title: 'Electrician Needed',
-            location: 'Sector 21, Noida',
-            wage: '₹800',
-            isUrgent: true,
-            skills: ['Wiring', 'Electrical', 'Circuit Breakers'],
-            recruiter: {
-                name: 'Ajay Patil',
-                rating: 4.6,
-                reviews: 98,
-                verified: true,
-                phone: '+91 99930 19***',
-                pic: 'https://randomuser.me/api/portraits/men/85.jpg'
-            },
-            type: 'featured'
-        },
-        {
-            id: 2,
-            title: 'Electrician Needed',
-            location: 'Sector 21, Noida',
-            wage: '₹600',
-            isUrgent: true,
-            skills: ['Skills', 'Wiring', 'Eletrical Repair', 'Circuit Breakers'],
-            recruiter: {
-                name: 'Ajay Kapoor',
-                rating: 5.0,
-                reviews: 12,
-                verified: false,
-                phone: '+91 98765 43***',
-                pic: 'https://randomuser.me/api/portraits/men/32.jpg'
-            },
-            postedTime: '2 hrs ago',
-            duration: '2 hours ago',
-            type: 'recent'
-        },
-        // Adding more dummy data to fill the list
-        {
-            id: 3,
-            title: 'Plumber Required',
-            location: 'Gurgaon',
-            wage: '₹750',
-            isUrgent: false,
-            skills: ['Pipe Fitting', 'Repair', 'Installation'],
-            recruiter: {
-                name: 'Rohan Singh',
-                rating: 4.2,
-                reviews: 45,
-                verified: true,
-                phone: '+91 98123 45***',
-                pic: 'https://randomuser.me/api/portraits/men/44.jpg'
-            },
-            postedTime: '5 hrs ago',
-            type: 'recent'
+    // Filters
+    const [filterCategory, setFilterCategory] = useState('All');
+    const [filterWage, setFilterWage] = useState('All');
+
+    useEffect(() => {
+        const fetchJobsAndApplications = async () => {
+            if (currentUser?.uid) {
+                try {
+                    const [allJobs, myApplications] = await Promise.all([
+                        DB.jobs.getAll(),
+                        DB.applications.getByWorker(currentUser.uid)
+                    ]);
+
+                    const appliedIds = new Set(myApplications.map(a => a.jobId));
+                    setAppliedJobIds(appliedIds);
+
+                    // Filter out closed jobs or jobs created by self (if logic permits, though workers usually don't post)
+                    // Also sort by newest
+                    const openJobs = allJobs
+                        .filter(j => j.status === 'open')
+                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                    setJobs(openJobs);
+                    setFilteredJobs(openJobs);
+
+                } catch (error) {
+                    console.error("Error fetching jobs:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchJobsAndApplications();
+    }, [currentUser]);
+
+    // Apply Filters
+    useEffect(() => {
+        let result = jobs;
+
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(j =>
+                j.title.toLowerCase().includes(query) ||
+                j.location.toLowerCase().includes(query) ||
+                (j.category && j.category.toLowerCase().includes(query))
+            );
         }
-    ];
+
+        if (filterCategory !== 'All') {
+            result = result.filter(j => j.category === filterCategory);
+        }
+
+        // Wage filter mock logic (needs robust logic or simple buckets)
+        // For now, simple demonstration
+        if (filterWage === 'High (>800)') {
+            result = result.filter(j => Number(j.wage) > 800);
+        }
+
+        setFilteredJobs(result);
+
+    }, [searchQuery, filterCategory, filterWage, jobs]);
+
+    const handleApplyClick = (job) => {
+        if (!currentUser || appliedJobIds.has(job.id)) return;
+        navigate(`/apply-job/${job.id}`, { state: { job } });
+    };
+
+    const getTimeAgo = (dateStr) => {
+        if (!dateStr) return 'Recently';
+        const seconds = Math.floor((new Date() - new Date(dateStr)) / 1000);
+        let interval = seconds / 3600;
+        if (interval > 24) return Math.floor(interval / 24) + " days ago";
+        if (interval > 1) return Math.floor(interval) + " hrs ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " mins ago";
+        return "Just now";
+    };
 
     return (
         <div className="worker-find-jobs-container">
@@ -87,16 +118,37 @@ const WorkerFindJobs = () => {
             <div className="jobs-filter-section">
                 <div className="filter-row top">
                     <div className="filter-input-wrapper dropdown">
-                        <span>Electrician</span>
-                        <FaChevronDown className="filter-chevron" />
+                        <select
+                            value={filterCategory}
+                            onChange={(e) => setFilterCategory(e.target.value)}
+                            style={{ border: 'none', background: 'transparent', width: '100%', outline: 'none' }}
+                        >
+                            <option value="All">All Categories</option>
+                            <option value="Electrician">Electrician</option>
+                            <option value="Plumber">Plumber</option>
+                            <option value="Mason">Mason</option>
+                            <option value="Driver">Driver</option>
+                            <option value="Labor">Labor</option>
+                        </select>
                     </div>
                     <div className="filter-input-wrapper dropdown wage-dropdown">
-                        <span>₹600-₹1,100</span>
-                        <FaChevronDown className="filter-chevron" />
+                        <select
+                            value={filterWage}
+                            onChange={(e) => setFilterWage(e.target.value)}
+                            style={{ border: 'none', background: 'transparent', width: '100%', outline: 'none' }}
+                        >
+                            <option value="All">All Wages</option>
+                            <option value="High (>800)">High ({'>'} ₹800)</option>
+                        </select>
                     </div>
-                    <div className="filter-input-wrapper dropdown wage-dropdown-small">
-                        <span>₹1,00</span>
-                        <FaChevronDown className="filter-chevron" />
+                    <div className="filter-input-wrapper" style={{ flex: 1, padding: '8px 12px' }}>
+                        <input
+                            type="text"
+                            placeholder="Search by keywords..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{ border: 'none', outline: 'none', width: '100%', background: 'transparent' }}
+                        />
                     </div>
                 </div>
                 <div className="filter-row bottom">
@@ -105,7 +157,7 @@ const WorkerFindJobs = () => {
                         <FaChevronDown className="filter-chevron" />
                     </div>
                     <div className="filter-input-wrapper dropdown location-dropdown">
-                        <span>Within 5 km of Sector 21, Noida</span>
+                        <span>Within 5 km</span>
                         <FaChevronDown className="filter-chevron" />
                     </div>
                     <button className="search-btn-orange">Search</button>
@@ -115,7 +167,7 @@ const WorkerFindJobs = () => {
             {/* Results Header */}
             <div className="results-count-header">
                 <span style={{ fontSize: '0.9rem', color: 'var(--secondary-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {'<'} 50 Jobs Found
+                    {loading ? 'Loading...' : `${filteredJobs.length} Jobs Found`}
                 </span>
             </div>
 
@@ -123,112 +175,67 @@ const WorkerFindJobs = () => {
                 {/* Main Job List */}
                 <div className="jobs-main-col">
 
-                    {/* Featured/Urgent Card */}
-                    <div className="job-card-large featured">
-                        <div className="job-card-top">
-                            <div className="job-icon-box orange">
-                                <FaBriefcase />
-                            </div>
-                            <div className="job-info-main">
-                                <div className="job-title-row">
-                                    <h3>{jobs[0].title}</h3>
-                                    <span className="wage-tag">{jobs[0].wage}/day</span>
-                                    {jobs[0].isUrgent && <span className="urgent-badge">Urgent</span>}
-                                    <button className="apply-btn-blue">Apply</button>
-                                </div>
-                                <div className="job-loc-row">
-                                    <span className="loc">{jobs[0].location}</span>
-                                </div>
-                            </div>
+                    {loading ? (
+                        <div style={{ padding: '40px', textAlign: 'center' }}>Loading jobs...</div>
+                    ) : filteredJobs.length === 0 ? (
+                        <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'white', borderRadius: '8px' }}>
+                            No jobs matches your criteria.
                         </div>
-
-                        <div className="job-skills-row">
-                            <span className="skill-label">Pro Skills:</span>
-                            {jobs[0].skills.map((skill, i) => (
-                                <span key={i} className="skill-tag">{skill}</span>
-                            ))}
-                        </div>
-
-                        <div className="job-recruiter-row">
-                            <div className="recruiter-info">
-                                <img src={jobs[0].recruiter.pic} alt="Recruiter" className="recruiter-pic" />
-                                <div>
-                                    <div className="recruiter-name">
-                                        {jobs[0].recruiter.name}
-                                        <span className="recruiter-phone">{jobs[0].recruiter.phone}</span>
+                    ) : (
+                        filteredJobs.map(job => (
+                            <div className={`job-card-large ${job.isUrgent ? 'featured' : 'recent'}`} key={job.id}>
+                                <div className="job-card-top">
+                                    <div className="job-icon-box orange">
+                                        <FaBriefcase />
                                     </div>
-                                    <div className="recruiter-meta">
-                                        Recruiter
-                                        <span className="stars">
-                                            <FaStar /> <FaStar /> <FaStar /> <FaStar /> <FaStar className="half" /> {jobs[0].recruiter.rating}
-                                        </span>
-                                        <span className="verified-badge">
-                                            <FaCheckCircle className="check-icon" /> Phone Verified
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Removed duplicate Apply button */}
-
-                        </div>
-                    </div>
-
-                    <h3 className="section-subtitle">Recent Job Found</h3>
-
-                    {/* Recent Jobs Map */}
-                    {jobs.slice(1).map(job => (
-                        <div className="job-card-large recent" key={job.id}>
-                            <div className="job-card-top">
-                                <div className="job-icon-box orange">
-                                    <FaBriefcase />
-                                </div>
-                                <div className="job-info-main">
-                                    <div className="job-title-row">
-                                        <h3>{job.title}</h3>
-                                        <span className="wage-tag">{job.wage}/day</span>
-                                        {job.isUrgent && <span className="urgent-badge">Urgent</span>}
-                                        <button className="apply-btn-blue">Apply</button>
-                                    </div>
-                                    <div className="job-loc-row">
-                                        <span className="loc">{job.location}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="job-skills-row">
-                                <span className="skill-label">Pro Skills:</span>
-                                {job.skills.map((skill, i) => (
-                                    <span key={i} className="skill-tag">{skill}</span>
-                                ))}
-                            </div>
-
-                            <div className="job-meta-row">
-                                <span>Posted {job.postedTime}</span>
-                                {job.duration && <span> • {job.duration}</span>}
-                            </div>
-
-                            <div className="job-recruiter-row">
-                                <div className="recruiter-info">
-                                    <img src={job.recruiter.pic} alt="Recruiter" className="recruiter-pic" />
-                                    <div>
-                                        <div className="recruiter-name">
-                                            {job.recruiter.name}
+                                    <div className="job-info-main">
+                                        <div className="job-title-row">
+                                            <h3>{job.title}</h3>
+                                            <span className="wage-tag">₹{job.wage}/day</span>
+                                            {job.isUrgent && <span className="urgent-badge">Urgent</span>}
+                                            <button
+                                                className={`apply-btn-blue ${appliedJobIds.has(job.id) ? 'applied' : ''}`}
+                                                onClick={() => handleApplyClick(job)}
+                                                disabled={appliedJobIds.has(job.id)}
+                                                style={appliedJobIds.has(job.id) ? { backgroundColor: '#4CAF50', cursor: 'default' } : {}}
+                                            >
+                                                {appliedJobIds.has(job.id) ? 'Applied' : 'Apply'}
+                                            </button>
                                         </div>
-                                        <div className="recruiter-meta">
-                                            Recruiter
-                                            {job.recruiter.rating && (
-                                                <span className="stars"> • {job.recruiter.rating} stars</span>
-                                            )}
+                                        <div className="job-loc-row">
+                                            <span className="loc">{job.location}</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Removed duplicate Apply button */}
+                                <div className="job-skills-row">
+                                    <span className="skill-label">Category:</span>
+                                    <span className="skill-tag">{job.category}</span>
+                                </div>
 
+                                <div className="job-recruiter-row">
+                                    <div className="recruiter-info">
+                                        <img src={job.hirerPic || "https://randomuser.me/api/portraits/men/85.jpg"} alt="Recruiter" className="recruiter-pic" />
+                                        <div>
+                                            <div className="recruiter-name">
+                                                {job.hirerName || 'Hirer'}
+                                                {/* <span className="recruiter-phone">{jobs[0].recruiter.phone}</span> */}
+                                            </div>
+                                            <div className="recruiter-meta">
+                                                Recruiter
+                                                <span className="stars">
+                                                    {job.hirerRating ? `• ${job.hirerRating} ★` : ''}
+                                                </span>
+                                                <span className="posted-time" style={{ marginLeft: '10px', fontSize: '0.8rem', color: '#888' }}>
+                                                    • Posted {getTimeAgo(job.createdAt)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
 
                     {/* Pagination */}
                     <div className="pagination-wrapper">
@@ -266,50 +273,31 @@ const WorkerFindJobs = () => {
                         </ul>
                     </div>
 
-                    <div className="tips-card">
-                        <h3>People Also Apply For</h3>
-                        <ul className="tips-list">
-                            <li>
-                                <span className="tip-icon">📄</span>
-                                Use specific job type to narrow down search
-                            </li>
-                            <li>
-                                <span className="tip-icon">💰</span>
-                                Adjust wage and distance filters to find suitable jobs
-                            </li>
-                            <li>
-                                <span className="tip-icon">⭐</span>
-                                Review job details and ratings before applying
-                            </li>
-                        </ul>
-                    </div>
+
 
                     <div className="people-also-apply-list">
                         <h3>People Also Apply For</h3>
-                        <div className="mini-job-row">
-                            <div className="mini-job-icon"><FaBriefcase /></div>
-                            <div className="mini-job-info">
-                                <h4>Plumber Needed</h4>
-                                <span>Gurgaon • 21 ** ago</span>
-                            </div>
-                            <button className="mini-apply-btn">Apply</button>
-                        </div>
-                        <div className="mini-job-row">
-                            <div className="mini-job-icon"><FaBriefcase /></div>
-                            <div className="mini-job-info">
-                                <h4>Helper Required</h4>
-                                <span>Baner • 5 hrs ago</span>
-                            </div>
-                            <button className="mini-apply-btn">Apply</button>
-                        </div>
-                        <div className="mini-job-row">
-                            <div className="mini-job-icon"><FaBriefcase /></div>
-                            <div className="mini-job-info">
-                                <h4>Mason Job</h4>
-                                <span>Construction Work</span>
-                            </div>
-                            <button className="mini-apply-btn">Apply</button>
-                        </div>
+                        {jobs.length > 0 ? (
+                            jobs.slice(0, 3).map(job => (
+                                <div className="mini-job-row" key={'sidebar-' + job.id}>
+                                    <div className="mini-job-icon"><FaBriefcase /></div>
+                                    <div className="mini-job-info">
+                                        <h4>{job.title}</h4>
+                                        <span>{job.location} • {getTimeAgo(job.createdAt)}</span>
+                                    </div>
+                                    <button
+                                        className="mini-apply-btn"
+                                        onClick={() => handleApplyClick(job)}
+                                        disabled={appliedJobIds.has(job.id)}
+                                        style={appliedJobIds.has(job.id) ? { backgroundColor: '#4CAF50', cursor: 'default' } : {}}
+                                    >
+                                        {appliedJobIds.has(job.id) ? '✓' : 'Apply'}
+                                    </button>
+                                </div>
+                            ))
+                        ) : (
+                            <div style={{ color: '#888', fontSize: '0.9rem' }}>No recommendations yet.</div>
+                        )}
                     </div>
                 </aside>
             </div >

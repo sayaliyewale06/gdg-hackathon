@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     ChevronRight,
@@ -11,97 +11,86 @@ import {
 } from 'lucide-react';
 import './Reports.css';
 
+import { useAuth } from './context/AuthContext';
+import { DB } from './lib/db';
+
 const Reports = () => {
+    const { currentUser } = useAuth();
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [kpiData, setKpiData] = useState({
+        jobsPosted: 0,
+        workersHired: 0,
+        totalPayments: 0
+    });
+    const [reportData, setReportData] = useState([]);
 
-    // Mock KPI Data
-    const kpiData = {
-        jobsPosted: 5,
-        workersHired: 23,
-        totalPayments: 61700
-    };
+    useEffect(() => {
+        const fetchReportData = async () => {
+            if (currentUser?.uid) {
+                try {
+                    const [jobs, applications] = await Promise.all([
+                        DB.jobs.getByHirer(currentUser.uid),
+                        DB.applications.getByHirer(currentUser.uid)
+                    ]);
 
-    // Mock Table Data
-    const [reportData] = useState([
-        {
-            id: 1,
-            name: 'Mohan Das',
-            role: 'Electrician',
-            jobRole: 'Electrician',
-            location: 'Noida',
-            phone: '+91 9665 32****',
-            details: '5 Years Experience',
-            date: 'Apr 26, 2024',
-            payment: 3200,
-            status: 'Paid',
-            img: 'https://randomuser.me/api/portraits/men/62.jpg'
-        },
-        {
-            id: 2,
-            name: 'Vinod Patel',
-            role: 'Mason',
-            jobRole: 'Mason',
-            location: 'Wakad', // Inferred location from context or blank if not specified
-            phone: '+91 9665 32****',
-            details: '4 Years Experience',
-            date: 'Apr 25, 2024',
-            payment: 3500,
-            status: 'Paid',
-            img: 'https://randomuser.me/api/portraits/men/11.jpg'
-        },
-        {
-            id: 3,
-            name: 'Ramesh Yadav',
-            role: 'Construction Laborer',
-            jobRole: 'Electrician', // As per prompt Row 3: Job: Electrician, Construction Laborer ?? Maybe Job Title is Electrician? Or Role? Prompt says "Job: Electrician, Construction Laborer". I'll use Construction Laborer as Role and Electrician as Job Title to match headers.
-            location: '',
-            phone: '+91 9665 32****',
-            details: '3 Years Experience',
-            date: 'Apr 22, 2024',
-            payment: 2250,
-            status: 'Pending',
-            img: 'https://randomuser.me/api/portraits/men/32.jpg'
-        },
-        {
-            id: 4,
-            name: 'Suresh Kumar',
-            role: 'Plumber',
-            jobRole: 'Plumber',
-            location: 'Hinjewadi',
-            phone: '+91 9587 64****',
-            details: '6 Years Experience',
-            date: 'Apr 17, 2024',
-            payment: 1600,
-            status: 'Paid',
-            img: 'https://randomuser.me/api/portraits/men/45.jpg'
-        },
-        {
-            id: 5,
-            name: 'Kamlesh Kumar',
-            role: 'Welder',
-            jobRole: 'Welder',
-            location: 'Baner Pune',
-            phone: '+91 787 64****',
-            details: '5 Years Experience',
-            date: 'Apr 15, 2024',
-            payment: 3400,
-            status: 'Paid',
-            img: 'https://randomuser.me/api/portraits/men/55.jpg'
-        },
-        {
-            id: 6,
-            name: 'Arjun Verma',
-            role: 'Auto Driver',
-            jobRole: 'Auto Driver',
-            location: '',
-            phone: '', // Detailed phone not provided in prompt for Row 6
-            details: '',
-            date: 'Apr 14, 2024',
-            payment: 500,
-            status: 'Pending',
-            img: 'https://randomuser.me/api/portraits/men/33.jpg'
-        }
-    ]);
+                    // Process KPIs
+                    const jobsPosted = jobs.length;
+                    const hiredApps = applications.filter(a => ['accepted', 'completed'].includes(a.status));
+                    const workersHired = hiredApps.length;
+
+                    // Create Job Map for quick lookup of wage/location
+                    const jobMap = new Map(jobs.map(j => [j.id, j]));
+
+                    // Calculate Total Payments (Sum of wages for completed jobs)
+                    // Assumption: Payment = Job Wage. Only count 'completed' for payments.
+                    let totalPayments = 0;
+                    hiredApps.forEach(app => {
+                        if (app.status === 'completed') {
+                            const job = jobMap.get(app.jobId);
+                            if (job?.wage) totalPayments += Number(job.wage);
+                        }
+                    });
+
+                    setKpiData({ jobsPosted, workersHired, totalPayments });
+
+                    // Process Table Data
+                    // Fetch worker details for all relevant applications
+                    const uniqueWorkerIds = [...new Set(applications.map(a => a.workerId))];
+                    const workerPromises = uniqueWorkerIds.map(uid => DB.users.get(uid));
+                    const workerDocs = await Promise.all(workerPromises);
+                    const workerMap = new Map(workerDocs.map(u => [u.uid, u]));
+
+                    const rows = applications.map(app => {
+                        const job = jobMap.get(app.jobId);
+                        const worker = workerMap.get(app.workerId);
+
+                        return {
+                            id: app.id,
+                            name: worker?.displayName || app.workerName || 'Unknown Driver',
+                            role: worker?.role || 'Worker',
+                            jobRole: app.jobTitle || job?.title || 'Job',
+                            location: job?.location || 'Unknown',
+                            phone: worker?.phone || 'N/A',
+                            details: worker?.experience ? `${worker.experience} Years Experience` : '',
+                            date: new Date(app.appliedAt || Date.now()).toLocaleDateString(),
+                            payment: job?.wage || 0,
+                            status: app.status === 'completed' ? 'Paid' : 'Pending', // Simplified status mapping
+                            img: worker?.photoURL || app.workerPic || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                        };
+                    });
+
+                    setReportData(rows);
+
+                } catch (error) {
+                    console.error("Error fetching report data:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchReportData();
+    }, [currentUser]);
 
     return (
         <div className="reports-page-layout">
@@ -127,7 +116,7 @@ const Reports = () => {
                         <div className="kpi-icon"><Briefcase size={24} /></div>
                         <div className="kpi-info">
                             <span className="kpi-label">Jobs Posted</span>
-                            <span className="kpi-value">{kpiData.jobsPosted}</span>
+                            <span className="kpi-value">{loading ? '...' : kpiData.jobsPosted}</span>
                         </div>
                     </div>
                     <div className="reports-kpi-card">
@@ -135,8 +124,8 @@ const Reports = () => {
                         <div className="kpi-info">
                             <span className="kpi-label">Workers Hired</span>
                             <div className="kpi-value-row">
-                                <span className="kpi-value">{kpiData.workersHired}</span>
-                                <span className="badge-new">New</span>
+                                <span className="kpi-value">{loading ? '...' : kpiData.workersHired}</span>
+                                {/* <span className="badge-new">New</span> */}
                             </div>
                         </div>
                     </div>
@@ -145,8 +134,7 @@ const Reports = () => {
                         <div className="kpi-info">
                             <span className="kpi-label">Total Payments</span>
                             <div className="kpi-value-row">
-                                <span className="kpi-value">₹{kpiData.totalPayments.toLocaleString()}</span>
-                                <span className="badge-new">New</span>
+                                <span className="kpi-value">₹{loading ? '...' : kpiData.totalPayments.toLocaleString()}</span>
                             </div>
                         </div>
                     </div>
@@ -185,47 +173,57 @@ const Reports = () => {
                     </div>
 
                     <div className="table-scroll-wrapper">
-                        <table className="reports-table">
-                            <thead>
-                                <tr>
-                                    <th>Worker</th>
-                                    <th>Job Title / Location</th>
-                                    <th>Date</th>
-                                    <th>Payment</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {reportData.map(row => (
-                                    <tr key={row.id}>
-                                        <td className="cell-worker">
-                                            <img src={row.img} alt={row.name} className="cell-worker-img" />
-                                            <div className="cell-worker-info">
-                                                <h4>{row.name}</h4>
-                                                <div className="cell-worker-sub">{row.role} {row.phone ? `• ${row.phone}` : ''}</div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="cell-job-title">{row.jobRole}</div>
-                                            <div className="cell-job-loc">{row.location}</div>
-                                        </td>
-                                        <td>{row.date}</td>
-                                        <td><strong>₹{row.payment.toLocaleString()}</strong></td>
-                                        <td>
-                                            <span className={`status-badge ${row.status === 'Paid' ? 'status-paid' : 'status-pending'}`}>
-                                                {row.status}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button className="btn-view-details">
-                                                View Details
-                                            </button>
-                                        </td>
+                        {loading ? (
+                            <div style={{ padding: '40px', textAlign: 'center' }}>Loading reports...</div>
+                        ) : (
+                            <table className="reports-table">
+                                <thead>
+                                    <tr>
+                                        <th>Worker</th>
+                                        <th>Job Title / Location</th>
+                                        <th>Date</th>
+                                        <th>Payment</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {reportData.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>No reports data available.</td>
+                                        </tr>
+                                    ) : (
+                                        reportData.map(row => (
+                                            <tr key={row.id}>
+                                                <td className="cell-worker">
+                                                    <img src={row.img} alt={row.name} className="cell-worker-img" />
+                                                    <div className="cell-worker-info">
+                                                        <h4>{row.name}</h4>
+                                                        <div className="cell-worker-sub">{row.role} {row.phone ? `• ${row.phone}` : ''}</div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="cell-job-title">{row.jobRole}</div>
+                                                    <div className="cell-job-loc">{row.location}</div>
+                                                </td>
+                                                <td>{row.date}</td>
+                                                <td><strong>₹{row.payment.toLocaleString()}</strong></td>
+                                                <td>
+                                                    <span className={`status-badge ${row.status === 'Paid' ? 'status-paid' : 'status-pending'}`}>
+                                                        {row.status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <button className="btn-view-details">
+                                                        View Details
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </div>
 

@@ -11,8 +11,14 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  overflow-y: auto;
   /* Ensure vertical scrolling is enabled */
+  overflow-y: auto !important;
+  height: auto !important;
+}
+
+html {
+  overflow-y: auto !important;
+  height: auto !important;
 }
 
 /* Force visible scrollbar */

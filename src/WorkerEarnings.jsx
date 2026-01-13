@@ -1,8 +1,74 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './WorkerDashboard.css'; // Reuse valid styles
 import { FaBriefcase, FaRupeeSign, FaCalendarAlt, FaStar, FaDownload } from 'react-icons/fa';
+import { DB } from './lib/db';
+import { useAuth } from './context/AuthContext';
 
 const WorkerEarnings = () => {
+    const { currentUser } = useAuth();
+    const [earningsData, setEarningsData] = useState([]);
+    const [stats, setStats] = useState({
+        total: 0,
+        weekly: 0,
+        jobsCount: 0
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchEarnings = async () => {
+            if (currentUser?.uid) {
+                try {
+                    // Fetch completed applications (which represent earnings)
+                    const myApplications = await DB.applications.getByWorker(currentUser.uid);
+
+                    // Filter for completed/accepted jobs (assuming these are paid)
+                    // For this MVP, let's treat 'completed' as earned
+                    const completedApps = myApplications.filter(app => app.status === 'completed');
+
+                    // Need to fetch job details to get the wage
+                    const jobsPromises = completedApps.map(async (app) => {
+                        const job = await DB.jobs.get(app.jobId);
+                        return {
+                            ...app, // app has createdAt
+                            wage: job?.wage || 0,
+                            jobTitle: job?.title || 'Unknown Job',
+                            location: job?.location || 'Unknown',
+                            hirerName: job?.hirerName || 'Unknown Employer',
+                            hirerPic: job?.hirerPic,
+                            hirerRating: job?.hirerRating || 0
+                        };
+                    });
+
+                    const earningsHistory = await Promise.all(jobsPromises);
+
+                    // Sort by newest
+                    const sortedHistory = earningsHistory.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    setEarningsData(sortedHistory);
+
+                    // Calculate Stats
+                    const total = sortedHistory.reduce((acc, curr) => acc + (parseInt(curr.wage) || 0), 0);
+
+                    const oneWeekAgo = new Date();
+                    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                    const weekly = sortedHistory
+                        .filter(item => new Date(item.createdAt) >= oneWeekAgo)
+                        .reduce((acc, curr) => acc + (parseInt(curr.wage) || 0), 0);
+
+                    setStats({
+                        total,
+                        weekly,
+                        jobsCount: sortedHistory.length
+                    });
+
+                } catch (error) {
+                    console.error("Error fetching earnings:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchEarnings();
+    }, [currentUser]);
     return (
         <div className="earnings-container">
             <div className="section-heading-row" style={{ marginBottom: '0' }}>
@@ -15,18 +81,18 @@ const WorkerEarnings = () => {
                 <div className="earnings-cards-group">
                     <div className="earnings-card-large" style={{ gridColumn: 'span 1', background: '#EAE3DA' }}>
                         <FaBriefcase className="ec-icon" />
-                        <div className="ec-amount">₹65,700</div>
+                        <div className="ec-amount">₹{stats.total.toLocaleString()}</div>
                         <div className="ec-label">Total Earnings</div>
                     </div>
                     <div className="earnings-card-small" style={{ background: '#F8F5F2' }}>
                         <FaRupeeSign className="ec-icon" style={{ color: '#5D7E85' }} />
-                        <div className="ec-amount" style={{ fontSize: '1.4rem' }}>₹12,500</div>
+                        <div className="ec-amount" style={{ fontSize: '1.4rem' }}>₹{stats.weekly.toLocaleString()}</div>
                         <div className="ec-label">This Week</div>
                     </div>
                     <div className="earnings-card-small" style={{ gridColumn: 'span 2', background: '#F8F5F2' }}>
                         <FaBriefcase className="ec-icon" style={{ color: '#5D7E85' }} />
-                        <div className="ec-amount">162</div>
-                        <div className="ec-label">Total Jobs</div>
+                        <div className="ec-amount">{stats.jobsCount}</div>
+                        <div className="ec-label">Completed Jobs</div>
                     </div>
                 </div>
 
@@ -83,74 +149,42 @@ const WorkerEarnings = () => {
                         <div style={{ justifySelf: 'end' }}>Status</div>
                     </div>
 
-                    {/* Row 1 */}
-                    <div className="et-row">
-                        <div className="et-date">April 28</div>
-                        <div className="et-job">
-                            <div className="et-job-icon"><FaBriefcase /></div>
-                            <div className="et-job-details">
-                                <h4>Packing Help</h4>
-                                <span>Baner</span>
-                            </div>
-                        </div>
-                        <div className="et-amount">₹700</div>
-                        <div className="et-employer">
-                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Vikram" />
-                            <div className="et-employer-info">
-                                <h5>Vikram Singh</h5>
-                                <div className="worker-stars" style={{ fontSize: '0.7rem' }}>
-                                    <FaStar /><FaStar /><FaStar /><FaStar /> <span style={{ color: '#888', fontWeight: '400' }}>95 Reviews</span>
+                    {loading ? (
+                        <div style={{ padding: '20px', textAlign: 'center' }}>Loading earnings...</div>
+                    ) : earningsData.length === 0 ? (
+                        <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>No earnings history yet.</div>
+                    ) : (
+                        earningsData.map((item) => (
+                            <div className="et-row" key={item.id}>
+                                <div className="et-date">
+                                    {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </div>
-                            </div>
-                        </div>
-                        <div className="et-applied-tag">Applied</div>
-                    </div>
-
-                    {/* Row 2 */}
-                    <div className="et-row">
-                        <div className="et-date">April 27</div>
-                        <div className="et-job">
-                            <div className="et-job-icon"><FaBriefcase /></div>
-                            <div className="et-job-details">
-                                <h4>Masonry Work</h4>
-                                <span>Hinjewadi</span>
-                            </div>
-                        </div>
-                        <div className="et-amount">₹950</div>
-                        <div className="et-employer">
-                            <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Rahul" />
-                            <div className="et-employer-info">
-                                <h5>Rahul Agrawal</h5>
-                                <div className="worker-stars" style={{ fontSize: '0.7rem' }}>
-                                    <FaStar /><FaStar /><FaStar /><FaStar /> <span style={{ color: '#888', fontWeight: '400' }}>125 Reviews</span>
+                                <div className="et-job">
+                                    <div className="et-job-icon"><FaBriefcase /></div>
+                                    <div className="et-job-details">
+                                        <h4>{item.jobTitle}</h4>
+                                        <span>{item.location}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div className="et-applied-tag">Applied</div>
-                    </div>
-
-                    {/* Row 3 */}
-                    <div className="et-row">
-                        <div className="et-date">April 26</div>
-                        <div className="et-job">
-                            <div className="et-job-icon"><FaBriefcase /></div>
-                            <div className="et-job-details">
-                                <h4>Driving Job</h4>
-                                <span>Shivajinagar</span>
-                            </div>
-                        </div>
-                        <div className="et-amount">₹800</div>
-                        <div className="et-employer">
-                            <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="Vishal" />
-                            <div className="et-employer-info">
-                                <h5>Vishal More</h5>
-                                <div className="worker-stars" style={{ fontSize: '0.7rem' }}>
-                                    <FaStar /><FaStar /><FaStar /> <span style={{ color: '#888', fontWeight: '400' }}>53 Reviews</span>
+                                <div className="et-amount">₹{item.wage}</div>
+                                <div className="et-employer">
+                                    <img src={item.hirerPic || "https://randomuser.me/api/portraits/men/32.jpg"} alt={item.hirerName} />
+                                    <div className="et-employer-info">
+                                        <h5>{item.hirerName}</h5>
+                                        <div className="worker-stars" style={{ fontSize: '0.7rem' }}>
+                                            {[...Array(5)].map((_, i) => (
+                                                <FaStar
+                                                    key={i}
+                                                    color={i < (item.hirerRating || 0) ? "#F4B400" : "#E0E0E0"}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
+                                <div className="et-applied-tag" style={{ background: '#e6fffa', color: '#047857' }}>Completed</div>
                             </div>
-                        </div>
-                        <div className="et-applied-tag">Applied</div>
-                    </div>
+                        ))
+                    )}
                 </div>
             </div>
         </div>

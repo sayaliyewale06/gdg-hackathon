@@ -10,89 +10,84 @@ import {
 } from 'lucide-react';
 import './Messages.css';
 
+import { useAuth } from './context/AuthContext';
+import { DB } from './lib/db';
+
 const Messages = () => {
+    const { currentUser } = useAuth();
     const navigate = useNavigate();
     const messagesEndRef = useRef(null);
 
-    // Mock Conversations Data
-    const [conversations, setConversations] = useState([
-        {
-            id: 1,
-            name: 'Arjun Verma',
-            role: 'Auto Driver',
-            lastMessage: 'Can you share the pickup details please?',
-            time: '3 min ago',
-            unread: 2,
-            img: 'https://randomuser.me/api/portraits/men/33.jpg',
-            status: 'online',
-            verified: true
-        },
-        {
-            id: 2,
-            name: 'Ramesh Yadav',
-            role: 'Construction Laborer',
-            lastMessage: 'Yes, I can come tomorrow. What time should...',
-            time: '15 min ago',
-            unread: 2,
-            img: 'https://randomuser.me/api/portraits/men/32.jpg',
-            status: 'offline',
-            verified: false // example
-        },
-        {
-            id: 3,
-            name: 'Mohan Das',
-            role: 'Electrician',
-            lastMessage: 'My current job will be done tomorrow. I will...',
-            time: '20 min ago',
-            unread: 0,
-            img: 'https://randomuser.me/api/portraits/men/62.jpg',
-            status: 'offline'
-        },
-        {
-            id: 4,
-            name: 'Anita Sharma',
-            role: 'Employer',
-            lastMessage: 'Can you recommend a good plumber?',
-            time: 'Yesterday',
-            unread: 0,
-            img: 'https://randomuser.me/api/portraits/women/44.jpg',
-            status: 'online'
-        },
-        {
-            id: 5,
-            name: 'Vinod Patel',
-            role: 'Mason',
-            lastMessage: 'Yes, I have all the required tools for the job.',
-            time: '2 days ago',
-            unread: 0,
-            img: 'https://randomuser.me/api/portraits/men/11.jpg',
-            status: 'offline'
-        },
-        {
-            id: 6,
-            name: 'Rahul Singh',
-            role: 'Painter',
-            lastMessage: "I'll arrive by 8 AM for the painting job.",
-            time: '4 days ago',
-            unread: 0,
-            img: 'https://randomuser.me/api/portraits/men/24.jpg',
-            status: 'offline'
-        }
-    ]);
-
-    // Active Chat Messages (Specific for Arjun, generic for others)
-    const [activeChatId, setActiveChatId] = useState(1);
-
-    const [messages, setMessages] = useState({
-        1: [ // Arjun's messages
-            { id: 1, sender: 'other', text: 'Hi Arjun, we need goods to be transported from sector 21 to Hinjewadi tomorrow. Are you interested?', time: '9:10 AM' },
-            { id: 2, sender: 'me', text: 'Yes, I am interested. What time should I reach sector 21?', time: '9:15 AM' },
-            { id: 3, sender: 'other', text: 'You should reach by 10:10AM. The goods need to be delivered by evening.', time: '9:16 AM' },
-            { id: 4, sender: 'me', text: 'Can you share the pickup details please?', time: '9:15 AM' } // Timestamp mismatch in user prompt (9:15 vs 9:16 prev), corrected order for logic or kept exact? Kept exact time strings from prompt but logical order.
-        ]
-    });
-
+    const [conversations, setConversations] = useState([]);
+    const [messages, setMessages] = useState({});
+    const [activeChatId, setActiveChatId] = useState(null);
+    const [activeUser, setActiveUser] = useState(null);
     const [newMessage, setNewMessage] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    // Fetch Messages
+    useEffect(() => {
+        const fetchMessages = async () => {
+            if (currentUser?.uid) {
+                try {
+                    const allMsgs = await DB.messages.getAllForUser(currentUser.uid);
+
+                    // Group by other user
+                    const groups = {};
+                    allMsgs.forEach(msg => {
+                        const otherId = msg.senderId === currentUser.uid ? msg.receiverId : msg.senderId;
+                        if (!groups[otherId]) groups[otherId] = [];
+                        groups[otherId].push(msg);
+                    });
+
+                    // Fetch user details for each group
+                    const otherUserIds = Object.keys(groups);
+                    const userPromises = otherUserIds.map(uid => DB.users.get(uid));
+                    const userDocs = await Promise.all(userPromises);
+                    const userMap = new Map(userDocs.map(u => [u.uid, u]));
+
+                    const convoList = otherUserIds.map(uid => {
+                        const user = userMap.get(uid) || { displayName: 'Unknown', photoURL: null, role: 'User' };
+                        const msgs = groups[uid];
+                        const lastMsg = msgs[msgs.length - 1]; // sorted in getAllForUser
+                        const unreadCount = msgs.filter(m => m.receiverId === currentUser.uid && !m.read).length;
+
+                        return {
+                            id: uid, // Use User UID as conversation ID
+                            name: user.displayName || 'Unknown',
+                            role: user.role || 'User',
+                            lastMessage: lastMsg.text,
+                            time: new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                            img: user.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                            unread: unreadCount,
+                            status: 'offline', // No presence system yet
+                            verified: false
+                        };
+                    });
+
+                    setConversations(convoList);
+                    setMessages(groups);
+
+                    if (convoList.length > 0 && !activeChatId) {
+                        setActiveChatId(convoList[0].id);
+                        setActiveUser(convoList[0]);
+                    }
+                } catch (error) {
+                    console.error("Error fetching messages:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchMessages();
+    }, [currentUser]); // Note: In real app, consider polling or snapshot
+
+    useEffect(() => {
+        if (activeChatId) {
+            const convo = conversations.find(c => c.id === activeChatId);
+            if (convo) setActiveUser(convo);
+        }
+    }, [activeChatId, conversations]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -104,29 +99,48 @@ const Messages = () => {
 
     const handleSelectConversation = (id) => {
         setActiveChatId(id);
-        // Mark as read
+        // Optimistically mark read in UI (would update DB in real app)
         setConversations(prev => prev.map(c =>
             c.id === id ? { ...c, unread: 0 } : c
         ));
     };
 
-    const handleSendMessage = (e) => {
+    const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() || !activeChatId) return;
 
-        const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        try {
+            const msgData = {
+                senderId: currentUser.uid,
+                receiverId: activeChatId,
+                text: newMessage,
+                read: false,
+                createdAt: new Date().toISOString()
+            };
 
-        setMessages(prev => ({
-            ...prev,
-            [activeChatId]: [
-                ...(prev[activeChatId] || []),
-                { id: Date.now(), sender: 'me', text: newMessage, time: timeString }
-            ]
-        }));
-        setNewMessage('');
+            await DB.messages.send(msgData);
+
+            // Optimistic Update
+            const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            setMessages(prev => ({
+                ...prev,
+                [activeChatId]: [
+                    ...(prev[activeChatId] || []),
+                    { ...msgData, id: Date.now().toString(), time: timeString } // temporary ID
+                ]
+            }));
+
+            // Update last message in conversation list
+            setConversations(prev => prev.map(c =>
+                c.id === activeChatId ? { ...c, lastMessage: newMessage, time: 'Just now' } : c
+            ));
+
+            setNewMessage('');
+        } catch (error) {
+            console.error("Failed to send message", error);
+        }
     };
 
-    const activeConversation = conversations.find(c => c.id === activeChatId) || conversations[0];
     const activeMessages = messages[activeChatId] || [];
 
     return (
@@ -192,10 +206,10 @@ const Messages = () => {
                         <div className="chat-header-user">
                             {/* In header only show text details often, or avatar too? Prompt screenshot shows Name + Status + Icons */}
                             <div className="chat-header-details">
-                                <h3>{activeConversation.name}</h3>
+                                <h3>{activeUser?.name}</h3>
                                 <div className="chat-user-status">
                                     <span className="status-dot"></span>
-                                    {activeConversation.role}
+                                    {activeUser?.role}
                                 </div>
                             </div>
                         </div>
@@ -210,24 +224,32 @@ const Messages = () => {
                         {activeMessages.length === 0 ? (
                             <p style={{ textAlign: 'center', color: '#999', marginTop: '40px' }}>No messages yet.</p>
                         ) : (
-                            activeMessages.map((msg, index) => (
-                                <div key={msg.id} className={`message-group ${msg.sender === 'me' ? 'outgoing' : 'incoming'}`}>
-                                    {msg.sender !== 'me' && (
-                                        <img src={activeConversation.img} alt="Sender" className="message-avatar" />
-                                    )}
-                                    {msg.sender === 'me' && (
-                                        /* In a real app user avatar here, or just bubble. User prompt shows avatars for incoming only usually, outgoing just bubble. */
-                                        <div style={{ width: '0px' }}></div>
-                                    )}
+                            activeMessages.map((msg, index) => {
+                                const isOutgoing = msg.senderId === currentUser?.uid;
+                                return (
+                                    <div key={msg.id || index} className={`message-group ${isOutgoing ? 'outgoing' : 'incoming'}`}>
+                                        {!isOutgoing && (
+                                            <img
+                                                src={activeUser?.img || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+                                                alt={activeUser?.name}
+                                                className="message-avatar"
+                                            />
+                                        )}
 
-                                    <div className="message-bubble-container">
-                                        <div className="message-bubble">
-                                            {msg.text}
+                                        <div className="message-bubble-container">
+                                            {!isOutgoing && (
+                                                <div className="sender-name" style={{ fontSize: '0.75rem', fontWeight: '600', color: '#6b7280', marginBottom: '2px', marginLeft: '4px' }}>
+                                                    {activeUser?.name}
+                                                </div>
+                                            )}
+                                            <div className="message-bubble">
+                                                {msg.text}
+                                            </div>
+                                            <div className="message-time">{msg.time}</div>
                                         </div>
-                                        <div className="message-time">{msg.time}</div>
                                     </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                         <div ref={messagesEndRef} />
                     </div>

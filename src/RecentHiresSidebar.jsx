@@ -1,37 +1,63 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import { DB } from './lib/db';
 import './HirerDashboard.css';
 
 const RecentHiresSidebar = () => {
-    // Dummy data for Recent Hires
-    const recentHires = [
-        { id: 1, name: 'Ramesh Yadav', role: 'Electrician', rating: 4.5, phone: '+91 9067 65****', pic: 'https://randomuser.me/api/portraits/men/32.jpg' },
-        { id: 2, name: 'Suresh Kumar', role: 'Plumber', rating: 5.0, phone: '+91 9125 45****', pic: 'https://randomuser.me/api/portraits/men/45.jpg' },
-        { id: 3, name: 'Mohan Das', role: 'Electrician', rating: 4.8, phone: '+91 9665 32****', pic: 'https://randomuser.me/api/portraits/men/62.jpg' },
-        { id: 4, name: 'Vinod Patel', role: 'Mason', rating: 4.5, phone: '+91 9876 54****', pic: 'https://randomuser.me/api/portraits/men/11.jpg' },
-        { id: 5, name: 'Raju Singh', role: 'Painter', rating: 4.2, phone: '+91 8888 12****', pic: 'https://randomuser.me/api/portraits/men/22.jpg' },
-        { id: 6, name: 'Anita Desai', role: 'Cleaner', rating: 4.9, phone: '+91 7777 99****', pic: 'https://randomuser.me/api/portraits/women/44.jpg' },
-    ];
+    const { currentUser } = useAuth();
+    const navigate = useNavigate();
+    const [recentHires, setRecentHires] = useState([]);
+
+    useEffect(() => {
+        const fetchHires = async () => {
+            if (currentUser?.uid) {
+                try {
+                    // Fetch applications where status is 'accepted' or 'completed'
+                    const applications = await DB.applications.getByHirer(currentUser.uid);
+                    const hired = applications.filter(app => ['accepted', 'completed'].includes(app.status));
+
+                    // We need to map this to the UI view. 
+                    // Ideally we fetch the worker details too, but we might have denormalized basic info
+                    setRecentHires(hired);
+                } catch (error) {
+                    console.error("Error fetching recent hires:", error);
+                }
+            }
+        };
+        fetchHires();
+    }, [currentUser]);
 
     return (
         <aside className="right-sidebar-scrollable">
             <h3 className="right-sidebar-title">Recent Hires</h3>
             <div className="recent-hires-list">
-                {recentHires.map(worker => (
-                    <div className="worker-card-compact" key={worker.id}>
-                        <div className="worker-card-top">
-                            <img src={worker.pic} alt={worker.name} className="worker-avatar-small" />
-                            <div className="worker-info-compact">
-                                <h4>{worker.name}</h4>
-                                <div className="worker-role">{worker.role} <span className="star">⭐</span></div>
-                                <div className="worker-phone">{worker.phone}</div>
-                            </div>
-                            <button className="view-profile-btn">View Profile</button>
-                        </div>
-                        <div className="worker-card-bottom">
-                            <a href="#" className="contact-link">• Contact</a>
-                        </div>
+                {recentHires.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>
+                        No recent hires yet.
                     </div>
-                ))}
+                ) : (
+                    recentHires.map(hire => (
+                        <div className="worker-card-compact" key={hire.id}>
+                            <div className="worker-card-top">
+                                <img
+                                    src={hire.workerPic || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+                                    alt={hire.workerName}
+                                    className="worker-avatar-small"
+                                />
+                                <div className="worker-info-compact">
+                                    <h4>{hire.workerName || "Worker"}</h4>
+                                    <div className="worker-role">{hire.jobTitle || "Job"} <span className="star">⭐</span></div>
+                                    <div className="worker-phone">Status: {hire.status}</div>
+                                </div>
+                                <button className="view-profile-btn">View</button>
+                            </div>
+                            <div className="worker-card-bottom">
+                                <a href="#" className="contact-link">• Contact</a>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </aside>
     );

@@ -2,26 +2,54 @@ import React, { useState, useEffect } from 'react';
 import './WorkerDashboard.css';
 import { DB } from './lib/db';
 import { seedDatabase } from './lib/seed';
+import { useAuth } from './context/AuthContext';
 import { FaChevronDown, FaSearch, FaBriefcase, FaTruck, FaBolt, FaCar, FaMapMarkerAlt, FaStar, FaUserFriends, FaClock, FaCheckCircle, FaPaintRoller, FaHammer, FaWrench } from 'react-icons/fa';
 
 const WorkerActiveJobs = () => {
+    const { currentUser } = useAuth();
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchJobs = async () => {
-            try {
-                const fetchedJobs = await DB.jobs.getAll();
-                setJobs(fetchedJobs);
-            } catch (error) {
-                console.error("Error fetching jobs:", error);
-            } finally {
-                setLoading(false);
+        const fetchActiveJobs = async () => {
+            if (currentUser?.uid) {
+                try {
+                    // Fetch applications where worker is current user
+                    const myApplications = await DB.applications.getByWorker(currentUser.uid);
+
+                    // Filter for 'accepted' or 'in_progress' or 'completed'
+                    const activeApps = myApplications.filter(a =>
+                        ['accepted', 'in_progress', 'completed'].includes(a.status)
+                    );
+
+                    // Fetch job details for each active application
+                    // TODO: Optimize by fetching only needed jobs or using a map from prev context
+                    // For now, simple parallel fetch
+                    const jobPromises = activeApps.map(async (app) => {
+                        const job = await DB.jobs.get(app.jobId);
+                        return { ...job, applicationStatus: app.status, applicationId: app.id };
+                    });
+
+                    const activeJobsData = await Promise.all(jobPromises);
+
+                    // Sort: In Progress first, then Accepted, then Completed
+                    const sortedJobs = activeJobsData.sort((a, b) => {
+                        const statusOrder = { 'in_progress': 0, 'accepted': 1, 'completed': 2 };
+                        return statusOrder[a.applicationStatus] - statusOrder[b.applicationStatus];
+                    });
+
+                    setJobs(sortedJobs);
+
+                } catch (error) {
+                    console.error("Error fetching active jobs:", error);
+                } finally {
+                    setLoading(false);
+                }
             }
         };
 
-        fetchJobs();
-    }, []);
+        fetchActiveJobs();
+    }, [currentUser]);
 
     // Helper to get icon based on category
     const getCategoryIcon = (category) => {
@@ -115,19 +143,19 @@ const WorkerActiveJobs = () => {
                             <div className="aj-row-mid">
                                 <div className="aj-wage-text">₹{job.wage}<span className="per-day">/day</span></div>
                                 <div className="aj-status-group">
-                                    {job.isUrgent ? (
-                                        <span className="aj-badge urgent">Urgent</span>
-                                    ) : job.status === 'in_progress' ? (
+                                    {job.applicationStatus === 'in_progress' ? (
                                         <span className="aj-badge progress">In Progress</span>
+                                    ) : job.applicationStatus === 'completed' ? (
+                                        <span className="aj-badge completed" style={{ backgroundColor: '#e6fffa', color: '#047857' }}>Completed</span>
                                     ) : (
-                                        <span className="aj-posted-text">Posted {new Date(job.createdAt).toLocaleDateString()}</span>
+                                        <span className="aj-badge urgent" style={{ backgroundColor: '#e0f2fe', color: '#0369a1' }}>Accepted</span>
                                     )}
                                 </div>
                                 <div className="aj-meta-info">
-                                    {job.status === 'in_progress' ? (
-                                        <span><FaClock size={10} /> 3 Days Left</span>
+                                    {job.applicationStatus === 'in_progress' ? (
+                                        <span><FaClock size={10} /> Active Now</span>
                                     ) : (
-                                        <span><FaUserFriends size={10} /> {job.applicantsCount || 0} New applicants</span>
+                                        <span><FaCheckCircle size={10} /> {job.applicationStatus === 'accepted' ? 'Ready to Start' : 'Job Done'}</span>
                                     )}
                                 </div>
                             </div>

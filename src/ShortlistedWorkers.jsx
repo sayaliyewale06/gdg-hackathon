@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     ChevronRight,
@@ -7,81 +7,81 @@ import {
     Phone,
     Star
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import './ShortlistedWorkers.css';
 
-const ShortlistedWorkers = () => {
-    const navigate = useNavigate();
+import { useAuth } from './context/AuthContext';
+import { DB } from './lib/db';
 
-    // Mock Data
-    const [workers, setWorkers] = useState([
-        {
-            id: 1,
-            name: 'Ramesh Yadav',
-            role: 'Construction Laborer',
-            location: 'Wagoli, Pune',
-            rating: 4.5,
-            exp: 3,
-            wage: 750,
-            skills: ['Masonry', 'Carpentry'],
-            img: 'https://randomuser.me/api/portraits/men/32.jpg'
-        },
-        {
-            id: 2,
-            name: 'Suresh Kumar',
-            role: 'Plumber',
-            location: 'Hinjewadi',
-            rating: 4.0,
-            exp: 4,
-            wage: 800,
-            skills: ['Water Pipe Fitting', 'Troubleshooting', 'Leak Repair'],
-            img: 'https://randomuser.me/api/portraits/men/45.jpg'
-        },
-        {
-            id: 3,
-            name: 'Mohan Das',
-            role: 'Electrician',
-            location: 'Baner, Pune',
-            rating: 4.8,
-            exp: 5,
-            wage: 900,
-            skills: ['Wiring', 'Circuit Breakers', 'Electrical Repair'],
-            img: 'https://randomuser.me/api/portraits/men/62.jpg'
-        },
-        {
-            id: 4,
-            name: 'Vinod Patel',
-            role: 'Mason',
-            location: 'Wakad',
-            rating: 4.5,
-            exp: 6,
-            wage: 700,
-            skills: ['Masonry', 'Tile Work'],
-            img: 'https://randomuser.me/api/portraits/men/11.jpg'
-        },
-        {
-            id: 5,
-            name: 'Kamlesh Kumar',
-            role: 'Worker',
-            location: 'Pune, Pune',
-            rating: 4.8,
-            exp: 5,
-            wage: 850,
-            skills: ['Arc Welding', 'Pipe Welding'],
-            img: 'https://randomuser.me/api/portraits/men/55.jpg'
-        }
-    ]);
+const ShortlistedWorkers = () => {
+    const { currentUser } = useAuth();
+    const navigate = useNavigate();
+    const [workers, setWorkers] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchShortlisted = async () => {
+            if (currentUser?.uid) {
+                try {
+                    const allApps = await DB.applications.getByHirer(currentUser.uid);
+                    // Filter for accepted/shortlisted applications
+                    // Assuming 'accepted' means shortlisted/hired for now. 
+                    // If we have a distinct 'shortlisted' status, we should use that.
+                    // Based on schema, we have 'pending', 'accepted', 'rejected', 'completed'.
+                    // 'accepted' seems to fit "Shortlisted/Hired".
+                    const shortlisted = allApps.filter(app => app.status === 'accepted');
+
+                    // We might need to fetch worker details if not fully denormalized
+                    // ApplicationSchema has workerName, workerPic.
+                    // If we need more (rating, skills), we might need to fetch User.
+                    // For now, let's Map what we have in ApplicationSchema.
+
+                    // To get Rating and Skills, we SHOULD fetch the worker profile.
+                    // Let's do a follow-up fetch for unique worker IDs.
+                    const workerIds = [...new Set(shortlisted.map(a => a.workerId))];
+                    const workerPromises = workerIds.map(uid => DB.users.get(uid));
+                    const workerDocs = await Promise.all(workerPromises);
+                    const workerMap = new Map(workerDocs.map(u => [u.uid, u]));
+
+                    const combinedData = shortlisted.map(app => {
+                        const workerProfile = workerMap.get(app.workerId);
+                        return {
+                            id: app.id,
+                            appId: app.id,
+                            ...workerProfile, // spread user data (skills, cleaning rating etc)
+                            // prioritize app specific data if any
+                            status: app.status,
+                            jobTitle: app.jobTitle,
+                            wage: 0 // We might need to fetch Job to get wage, or store it in App
+                        };
+                    });
+
+                    setWorkers(combinedData);
+                } catch (error) {
+                    console.error("Error fetching shortlisted:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchShortlisted();
+    }, [currentUser]);
 
     const handleAssign = (name) => {
-        const confirmAssign = window.confirm(`Assign job to ${name}?`);
-        if (confirmAssign) {
-            alert(`Job assigned to ${name} successfully! Check "Ongoing Jobs" for updates.`);
-        }
+        // In a real app, this would update DB to 'hired' or move to another collection
+        // Simulating "hired" by removing from shortlist
+        setWorkers(prev => prev.filter(w => w.displayName !== name));
+        toast.success(`Job assigned to ${name} successfully! Check "Ongoing Jobs" for updates.`);
     };
 
-    const handleRemove = (id, name) => {
-        const confirmRemove = window.confirm(`Are you sure you want to remove ${name} from shortlisted candidates?`);
-        if (confirmRemove) {
+    const handleRemove = async (id, name) => {
+        try {
+            await DB.applications.updateStatus(id, 'rejected');
             setWorkers(prev => prev.filter(w => w.id !== id));
+            toast.success(`Removed ${name} from shortlisted candidates.`);
+        } catch (error) {
+            console.error("Error removing worker:", error);
+            toast.error("Failed to remove worker.");
         }
     };
 
@@ -144,65 +144,73 @@ const ShortlistedWorkers = () => {
             </div>
 
             {/* List */}
-            <h2 className="shortlist-list-header">Shortlisted Workers ({workers.length} Jobs)</h2>
+            <h2 className="shortlist-list-header">Shortlisted Workers ({workers.length})</h2>
 
-            <div className="shortlist-list">
-                {workers.map(worker => (
-                    <div className="shortlist-card" key={worker.id}>
-                        {/* 1. Image */}
-                        <div className="shortlist-img-container">
-                            <img src={worker.img} alt={worker.name} className="shortlist-img" />
-                        </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>Loading...</div>
+            ) : (
+                <div className="shortlist-list">
+                    {workers.map(worker => (
+                        <div className="shortlist-card" key={worker.id}>
+                            {/* 1. Image */}
+                            <div className="shortlist-img-container">
+                                <img
+                                    src={worker.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+                                    alt={worker.displayName}
+                                    className="shortlist-img"
+                                />
+                            </div>
 
-                        {/* 2. Main Info */}
-                        <div className="shortlist-info">
-                            <h3 className="shortlist-name">{worker.name}</h3>
-                            <p className="shortlist-role">{worker.role}</p>
-                            <div className="shortlist-location">
-                                <MapPin size={14} /> {worker.location}
+                            {/* 2. Main Info */}
+                            <div className="shortlist-info">
+                                <h3 className="shortlist-name">{worker.displayName || "Worker"}</h3>
+                                <p className="shortlist-role">{worker.jobTitle || worker.role || "Worker"}</p>
+                                <div className="shortlist-location">
+                                    <MapPin size={14} /> {worker.location || "Pune"}
+                                </div>
+                            </div>
+
+                            {/* 3. Details */}
+                            <div className="shortlist-details">
+                                <div className="shortlist-rating">
+                                    <span className="stars-gold">{'★'.repeat(Math.round(worker.rating || 0))}</span>
+                                    <span style={{ marginLeft: '4px' }}>{/* spacing */}</span>
+                                    <span>{worker.rating || 0}</span>
+                                </div>
+                                <div className="shortlist-exp-wage">
+                                    <strong>₹{worker.wage || 0}/day</strong>
+                                    <span style={{ color: '#ccc' }}>|</span>
+                                    <span>{worker.experience || 0} Years Experience</span>
+                                </div>
+                                <div className="shortlist-skills">
+                                    {(worker.skills || ['General']).map((skill, idx) => (
+                                        <span key={idx} className={`skill-badge ${getSkillColor(idx)}`}>
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 4. Actions */}
+                            <div className="shortlist-actions">
+                                <button className="btn-action btn-assign" onClick={() => handleAssign(worker.displayName)}>Assign Job</button>
+                                <button className="btn-action btn-remove" onClick={() => handleRemove(worker.id, worker.displayName)}>Remove</button>
+                                <button className="btn-action btn-contact" onClick={() => handleContact(worker.displayName)}>Contact</button>
+
+                                <div className="icon-phone-call" title="Call Worker">
+                                    <Phone size={18} />
+                                </div>
                             </div>
                         </div>
+                    ))}
 
-                        {/* 3. Details */}
-                        <div className="shortlist-details">
-                            <div className="shortlist-rating">
-                                <span className="stars-gold">{'★'.repeat(Math.floor(worker.rating))}</span>
-                                <span style={{ marginLeft: '4px' }}>{/* spacing */}</span>
-                                <span>{worker.rating}</span>
-                            </div>
-                            <div className="shortlist-exp-wage">
-                                <strong>₹{worker.wage}/day</strong>
-                                <span style={{ color: '#ccc' }}>|</span>
-                                <span>{worker.exp} Years Experience</span>
-                            </div>
-                            <div className="shortlist-skills">
-                                {worker.skills.map((skill, idx) => (
-                                    <span key={idx} className={`skill-badge ${getSkillColor(idx)}`}>
-                                        {skill}
-                                    </span>
-                                ))}
-                            </div>
+                    {workers.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                            No shortlisted workers found.
                         </div>
-
-                        {/* 4. Actions */}
-                        <div className="shortlist-actions">
-                            <button className="btn-action btn-assign" onClick={() => handleAssign(worker.name)}>Assign Job</button>
-                            <button className="btn-action btn-remove" onClick={() => handleRemove(worker.id, worker.name)}>Remove</button>
-                            <button className="btn-action btn-contact" onClick={() => handleContact(worker.name)}>Contact</button>
-
-                            <div className="icon-phone-call" title="Call Worker">
-                                <Phone size={18} />
-                            </div>
-                        </div>
-                    </div>
-                ))}
-
-                {workers.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                        No shortlisted workers found.
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
 
             {/* Pagination */}
             {workers.length > 0 && (

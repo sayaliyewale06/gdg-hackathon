@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 import {
     MapPin,
     ChevronRight,
@@ -8,86 +9,79 @@ import {
     MessageCircle, // Using MessageCircle for WhatsApp/Message
     Filter
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import './Applicants.css';
+
+import { DB } from './lib/db';
 
 const Applicants = () => {
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
+    const [applications, setApplications] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // Mock Data - Specific to requirements
-    const applicantsData = [
-        {
-            id: 1,
-            name: 'Ramesh Yadav',
-            role: 'Construction Laborer',
-            location: 'Wagoli, Pune',
-            rating: 4.5,
-            exp: 3,
-            skills: ['Masonry', 'Carpentry'],
-            wage: 750,
-            phone: '+91 91780 12***',
-            img: 'https://randomuser.me/api/portraits/men/32.jpg'
-        },
-        {
-            id: 2,
-            name: 'Suresh Kumar',
-            role: 'Plumber',
-            location: 'Hinjewadi',
-            rating: 4.0,
-            exp: 4,
-            skills: ['Water Pipe Fitting', 'Troubleshooting'],
-            wage: 800,
-            phone: '+91 98765 43***',
-            img: 'https://randomuser.me/api/portraits/men/45.jpg'
-        },
-        {
-            id: 3,
-            name: 'Mohan Das',
-            role: 'Electrician',
-            location: 'Baner, Pune',
-            rating: 4.8,
-            exp: 5,
-            skills: ['Wiring', 'Circuit Breakers', 'Electrical Repair'],
-            wage: 900,
-            phone: '+91 91234 56***',
-            img: 'https://randomuser.me/api/portraits/men/62.jpg'
-        },
-        {
-            id: 4,
-            name: 'Vinod Patel',
-            role: 'Mason',
-            location: 'Wakad',
-            rating: 4.5,
-            exp: 6,
-            skills: ['Masonry', 'Tile Work'],
-            wage: 700,
-            phone: '+91 88888 77***',
-            img: 'https://randomuser.me/api/portraits/men/11.jpg'
-        },
-        {
-            id: 5,
-            name: 'Arjun Verma',
-            role: 'Auto Driver',
-            location: 'Hinjewadi',
-            rating: 4.0,
-            exp: 7,
-            skills: ['Local Driving', 'Goods Delivery'],
-            wage: 500,
-            phone: '+91 77777 66***',
-            img: 'https://randomuser.me/api/portraits/men/33.jpg'
-        },
-        {
-            id: 6,
-            name: 'Rahul Singh',
-            role: 'Painter',
-            location: 'Karol Bagh, Delhi',
-            rating: 5.0,
-            exp: 8,
-            skills: ['House Painting', 'Wall Repair', 'Primer Coat'],
-            wage: 600,
-            phone: '+91 99999 00***',
-            img: 'https://randomuser.me/api/portraits/men/24.jpg'
+    useEffect(() => {
+        const fetchApplications = async () => {
+            if (currentUser?.uid) {
+                try {
+                    // Fetch applications received by this hirer
+                    const apps = await DB.applications.getByHirer(currentUser.uid);
+
+                    // Hydrate with worker details and job details
+                    const fullApps = await Promise.all(apps.map(async (app) => {
+                        const [worker, job] = await Promise.all([
+                            DB.users.get(app.workerId),
+                            DB.jobs.get(app.jobId)
+                        ]);
+                        return {
+                            ...app,
+                            workerName: worker?.displayName || 'Unknown Worker',
+                            workerPic: worker?.photoURL,
+                            workerRole: worker?.role,
+                            workerLocation: worker?.location,
+                            workerRating: worker?.rating,
+                            workerPhone: worker?.phone,
+                            jobTitle: job?.title || 'Unknown Job',
+                            jobWage: job?.wage
+                        };
+                    }));
+
+                    setApplications(fullApps);
+                } catch (error) {
+                    console.error("Error fetching applications:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchApplications();
+    }, [currentUser]);
+
+    const handleAccept = async (appId) => {
+        try {
+            await DB.applications.updateStatus(appId, 'accepted');
+            // Optimistic Update
+            setApplications(prev => prev.map(a => a.id === appId ? { ...a, status: 'accepted' } : a));
+            toast.success("Worker accepted!");
+        } catch (error) {
+            console.error("Error accepting worker:", error);
+            toast.error("Failed to accept worker.");
         }
-    ];
+    };
+
+    const handleReject = async (appId) => {
+        const confirmReject = window.confirm("Are you sure you want to reject this applicant?");
+        if (!confirmReject) return;
+
+        try {
+            await DB.applications.updateStatus(appId, 'rejected');
+            setApplications(prev => prev.map(a => a.id === appId ? { ...a, status: 'rejected' } : a));
+            toast.success("Worker rejected.");
+        } catch (error) {
+            console.error("Error rejecting worker:", error);
+            toast.error("Failed to reject worker.");
+        }
+    };
 
     const [filters, setFilters] = useState({
         skill: 'All Skills',
@@ -175,62 +169,94 @@ const Applicants = () => {
             </div>
 
             {/* List */}
-            <h2 className="applicants-list-header">Applicants ({applicantsData.length} Jobs)</h2>
+            <h2 className="applicants-list-header">Applications ({applications.length})</h2>
 
-            <div className="applicants-list">
-                {applicantsData.map(applicant => (
-                    <div className="applicant-card" key={applicant.id}>
-                        {/* 1. Image */}
-                        <div className="applicant-img-container">
-                            <img src={applicant.img} alt={applicant.name} className="applicant-img" />
-                        </div>
+            {loading ? (
+                <div style={{ padding: '40px', textAlign: 'center' }}>Loading applications...</div>
+            ) : (
+                <div className="applicants-list">
+                    {applications.length === 0 ? (
+                        <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>No applications received yet.</div>
+                    ) : (
+                        applications.map(app => (
+                            <div className="applicant-card" key={app.id} style={{ borderLeft: app.status === 'accepted' ? '4px solid #4CAF50' : 'none' }}>
+                                {/* 1. Image */}
+                                <div className="applicant-img-container">
+                                    <img
+                                        src={app.workerPic || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+                                        alt={app.workerName}
+                                        className="applicant-img"
+                                    />
+                                </div>
 
-                        {/* 2. Main Info */}
-                        <div className="applicant-main-info">
-                            <h3 className="applicant-name">{applicant.name}</h3>
-                            <p className="applicant-role">{applicant.role}</p>
-                            <div className="applicant-location">
-                                <MapPin size={14} /> {applicant.location}
-                            </div>
-                        </div>
+                                {/* 2. Main Info */}
+                                <div className="applicant-main-info">
+                                    <h3 className="applicant-name">{app.workerName}</h3>
+                                    <p className="applicant-role">Applied for: <strong>{app.jobTitle}</strong></p>
+                                    <div className="applicant-location">
+                                        <MapPin size={14} /> {app.workerLocation || "Unknown"}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
+                                        Applied: {new Date(app.appliedAt).toLocaleDateString()}
+                                    </div>
+                                </div>
 
-                        {/* 3. Details (Rating, Exp, Skills) */}
-                        <div className="applicant-details">
-                            <div className="rating-row">
-                                <span className="stars">{'★'.repeat(Math.round(applicant.rating))}</span>
-                                <span style={{ color: '#444' }}>{applicant.rating}</span>
-                            </div>
-                            <div className="experience-row">
-                                {applicant.exp} Years Experience:
-                                <div className="skills-tags">
-                                    {applicant.skills.map((skill, idx) => (
-                                        <span className="skill-tag" key={idx}>{skill}</span>
-                                    ))}
+                                {/* 3. Details (Rating) */}
+                                <div className="applicant-details">
+                                    <div className="rating-row">
+                                        <span className="stars">{'★'.repeat(Math.round(app.workerRating || 0))}</span>
+                                        <span style={{ color: '#444' }}>{app.workerRating || 'New'}</span>
+                                    </div>
+                                    <div className="status-badge" style={{
+                                        marginTop: '10px',
+                                        padding: '4px 8px',
+                                        borderRadius: '4px',
+                                        background: app.status === 'accepted' ? '#e8f5e9' : '#fff3e0',
+                                        color: app.status === 'accepted' ? '#2e7d32' : '#e65100',
+                                        fontSize: '0.8rem',
+                                        display: 'inline-block'
+                                    }}>
+                                        Status: {app.status || 'Pending'}
+                                    </div>
+                                </div>
+
+                                {/* 4. Wages & Contact */}
+                                <div className="applicant-wages-contact">
+                                    <div className="wage-row">
+                                        Asking: ₹{app.jobWage || 'NA'}<span className="wage-unit">/day</span>
+                                    </div>
+                                    <div className="contact-row">
+                                        <Phone size={16} />
+                                        <span>{app.workerPhone || "No Phone"}</span>
+                                    </div>
+                                </div>
+
+                                {/* 5. Action */}
+                                <div className="action-buttons" style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                                    {app.status !== 'accepted' && (
+                                        <button
+                                            className="btn-shortlist"
+                                            style={{ background: '#4CAF50', color: 'white', border: 'none' }}
+                                            onClick={() => handleAccept(app.id)}
+                                        >
+                                            Accept
+                                        </button>
+                                    )}
+                                    {app.status !== 'rejected' && app.status !== 'accepted' && (
+                                        <button
+                                            className="btn-shortlist"
+                                            style={{ background: '#FF5252', color: 'white', border: 'none' }}
+                                            onClick={() => handleReject(app.id)}
+                                        >
+                                            Reject
+                                        </button>
+                                    )}
                                 </div>
                             </div>
-                        </div>
-
-                        {/* 4. Wages & Contact */}
-                        <div className="applicant-wages-contact">
-                            <div className="wage-row">
-                                ₹{applicant.wage}<span className="wage-unit">/day</span>
-                            </div>
-                            {/* Duplicate wage shown in requirements - typically implies expected vs offered or just a UI trait */}
-                            <div className="wage-row" style={{ opacity: 0.7 }}>
-                                ₹{applicant.wage}<span className="wage-unit">/day</span>
-                            </div>
-                            <div className="contact-row">
-                                <Phone size={16} />
-                                <MessageCircle size={16} />
-                                <span>{applicant.phone}</span>
-                            </div>
-                        </div>
-
-                        {/* 5. Action */}
-                        <button className="btn-shortlist">Shortlist</button>
-                    </div>
-                ))}
-            </div>
+                        ))
+                    )}
+                </div>
+            )}
 
             {/* Pagination */}
             <div className="pagination">
