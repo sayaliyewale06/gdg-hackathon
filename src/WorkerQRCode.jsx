@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './WorkerDashboard.css';
 import { DB } from './lib/db';
 import { useAuth } from './context/AuthContext';
-import { FaCheckCircle, FaQrcode, FaDownload, FaBriefcase, FaRupeeSign, FaTools, FaMapMarkerAlt, FaStar, FaEye, FaUserCircle } from 'react-icons/fa';
-import QRCode from "react-qr-code";
+import { FaCheckCircle, FaQrcode, FaDownload, FaBriefcase, FaRupeeSign, FaTools, FaMapMarkerAlt, FaStar, FaEye, FaUserCircle, FaCopy } from 'react-icons/fa';
+import { QRCodeCanvas } from "qrcode.react";
+import { toast } from 'react-hot-toast';
 
 const WorkerQRCode = () => {
     const { currentUser } = useAuth();
@@ -11,6 +12,9 @@ const WorkerQRCode = () => {
     const [stats, setStats] = useState({ earnings: 0, reviewsCount: 0, rating: 0 });
     const [reviews, setReviews] = useState([]);
     const [skills, setSkills] = useState("General Worker");
+
+    // Ref for QR Code wrapper to handle download
+    const qrWrapRef = useRef(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -63,41 +67,25 @@ const WorkerQRCode = () => {
     const profileUrl = currentUser ? `${window.location.origin}/worker-profile/${currentUser.uid}` : "";
 
     const downloadQR = () => {
-        const svg = document.getElementById("worker-qr-code");
-        if (!svg) return;
+        const canvas = qrWrapRef.current?.querySelector("canvas");
+        if (!canvas) return;
 
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        const data = new XMLSerializer().serializeToString(svg);
-        const img = new Image();
+        const pngUrl = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = pngUrl;
+        a.download = `worker-profile-qr-${currentUser?.uid || "user"}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
 
-        // Create a Blob from the SVG data
-        const svgBlob = new Blob([data], { type: "image/svg+xml;charset=utf-8" });
-        const url = URL.createObjectURL(svgBlob);
-
-        img.onload = () => {
-            // Set canvas size (add padding)
-            canvas.width = 250;
-            canvas.height = 250;
-
-            // Draw white background
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw the image
-            // Note: SVG viewBox might need handling if simple drawImage is off, but typically works for simple QRs
-            ctx.drawImage(img, 0, 0, 250, 250);
-
-            const pngUrl = canvas.toDataURL("image/png");
-            const downloadLink = document.createElement("a");
-            downloadLink.href = pngUrl;
-            downloadLink.download = "worker-profile-qr.png";
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-            URL.revokeObjectURL(url);
-        };
-        img.src = url;
+    const copyLink = async () => {
+        try {
+            await navigator.clipboard.writeText(profileUrl);
+            toast.success("Profile link copied!");
+        } catch (err) {
+            toast.error("Failed to copy link");
+        }
     };
 
     return (
@@ -117,37 +105,48 @@ const WorkerQRCode = () => {
                 <div className="qr-profile-card">
                     <div className="qr-profile-header">
                         <div className="qr-avatar-wrapper">
-                            <img src={currentUser?.photoURL || "https://randomuser.me/api/portraits/men/99.jpg"} alt="Avatar" className="qr-avatar" />
+                            {currentUser?.photoURL ? (
+                                <img src={currentUser.photoURL} alt="Avatar" className="qr-avatar" />
+                            ) : (
+                                <FaUserCircle className="qr-avatar" style={{ color: '#ccc', background: 'white' }} />
+                            )}
                         </div>
                         <div className="qr-user-details">
                             <h2>{currentUser?.displayName || "Worker Name"}</h2>
-                            <p>{userProfile?.status || "Verified Worker"}</p>
-                            <p>{userProfile?.phone || currentUser?.email || "+91 XXXXX XXXXX"}</p>
+                            <p>{userProfile?.role === 'worker' ? 'Verified Worker' : (userProfile?.role || "Worker")}</p>
+                            <p>{userProfile?.phone || currentUser?.email || "No Contact Info"}</p>
                         </div>
                     </div>
 
                     <div className="qr-verifications">
-                        <div className="qr-verify-item"><FaCheckCircle className="qr-check-icon" /> Profile Verified</div>
-                        <div className="qr-verify-item"><FaCheckCircle className="qr-check-icon" /> Location-based hiring</div>
+                        <div className={`qr-verify-item ${userProfile?.verified?.profile ? 'verified' : ''}`}>
+                            <FaCheckCircle className="qr-check-icon" color={userProfile?.uid ? "#4CAF50" : "#ccc"} />
+                            Profile Verified
+                        </div>
+                        <div className={`qr-verify-item ${userProfile?.location ? 'verified' : ''}`}>
+                            <FaCheckCircle className="qr-check-icon" color={userProfile?.location ? "#4CAF50" : "#ccc"} />
+                            Location-based hiring
+                        </div>
                     </div>
 
-                    <div className="qr-code-box">
-                        <div style={{ background: 'white', padding: '10px', borderRadius: '8px', display: 'inline-block' }}>
-                            <QRCode
-                                id="worker-qr-code"
+                    <div className="qr-code-box" ref={qrWrapRef}>
+                        <div style={{ background: 'white', padding: '16px', borderRadius: '12px', display: 'inline-block', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                            <QRCodeCanvas
                                 value={profileUrl}
-                                size={200}
-                                level="H"
+                                size={220}
+                                level="M"
+                                includeMargin={true}
                             />
                         </div>
-                        <p className="qr-scan-text">Scan this unique QR code to view my resume.</p>
+                        <p className="qr-scan-text">Scan to view my resume</p>
+                        <p style={{ fontSize: '0.75rem', color: '#999', marginTop: '4px', wordBreak: 'break-all' }}>{profileUrl}</p>
 
                         <div className="qr-action-buttons">
-                            <button className="qr-btn primary">
-                                <FaQrcode style={{ marginRight: '8px' }} /> Scan QR Code
+                            <button className="qr-btn primary" onClick={copyLink}>
+                                <FaCopy style={{ marginRight: '8px' }} /> Copy Link
                             </button>
                             <button className="qr-btn secondary" onClick={downloadQR}>
-                                <FaDownload style={{ marginRight: '8px' }} /> Download QR Code
+                                <FaDownload style={{ marginRight: '8px' }} /> Download QR
                             </button>
                         </div>
                     </div>
@@ -157,20 +156,24 @@ const WorkerQRCode = () => {
                 <div className="qr-right-col">
                     {/* Resume Card */}
                     <div className="qr-info-card">
-                        <h3 className="qr-card-title">{currentUser?.displayName ? currentUser.displayName.split(' ')[0] : 'Worker'}'s Resume</h3>
+                        <h3 className="qr-card-title">My Resume Stats</h3>
 
                         <div className="resume-list">
                             <div className="resume-item">
-                                <FaBriefcase className="resume-icon" /> <span>{userProfile?.experience || "New Worker"}</span>
+                                <FaBriefcase className="resume-icon" />
+                                <span>{userProfile?.experience || "Experience not added"}</span>
                             </div>
                             <div className="resume-item">
-                                <FaRupeeSign className="resume-icon" /> <span><strong>₹{stats.earnings}</strong> total Earned</span>
+                                <FaRupeeSign className="resume-icon" />
+                                <span><strong>₹{stats.earnings}</strong> Total Earned</span>
                             </div>
                             <div className="resume-item">
-                                <FaTools className="resume-icon" /> <span>{skills}</span>
+                                <FaTools className="resume-icon" />
+                                <span>{skills || "No skills listed"}</span>
                             </div>
                             <div className="resume-item">
-                                <FaMapMarkerAlt className="resume-icon" /> <span>{userProfile?.location || "Pune, India"}</span>
+                                <FaMapMarkerAlt className="resume-icon" />
+                                <span>{userProfile?.location || "Location not set"}</span>
                             </div>
                         </div>
 
@@ -178,13 +181,12 @@ const WorkerQRCode = () => {
                             <div className="resume-rating">
                                 <div className="worker-stars">
                                     {[...Array(5)].map((_, i) => (
-                                        <FaStar key={i} color={i < Math.round(stats.rating) ? "#F4B400" : "#ccc"} />
+                                        <FaStar key={i} color={i < Math.round(Number(stats.rating)) ? "#F4B400" : "#ccc"} />
                                     ))}
                                 </div>
                                 <span style={{ fontWeight: '700', marginLeft: '8px' }}>{stats.rating}</span>
                                 <span style={{ color: '#777', fontSize: '0.9rem', marginLeft: '4px' }}>({stats.reviewsCount} Reviews)</span>
                             </div>
-                            <button className="view-resume-btn">View Resume</button>
                         </div>
                     </div>
 
@@ -197,22 +199,22 @@ const WorkerQRCode = () => {
                             ) : (
                                 reviews.map((rev, idx) => (
                                     <div className="mini-review-item" key={idx}>
-                                        <img src={rev.reviewerPic || "https://randomuser.me/api/portraits/men/99.jpg"} className="mini-review-pic" alt="Reviewer" />
+                                        <div className="mini-review-pic-wrapper">
+                                            {/* Placeholder for reviewer - ideally fetch reviewer details or store in review */}
+                                            <FaUserCircle size={32} color="#ddd" />
+                                        </div>
                                         <div>
-                                            <p className="mini-review-text"><strong>{rev.reviewerName}</strong>, {rev.comment}</p>
+                                            <p className="mini-review-text"><strong>{rev.reviewerName || "Employer"}</strong>: "{rev.comment}"</p>
                                             <div className="worker-stars sm-stars">
                                                 {[...Array(5)].map((_, i) => (
                                                     <FaStar key={i} color={i < Math.floor(rev.rating) ? "#F4B400" : "#ccc"} />
                                                 ))}
-                                                <span className="mini-time">Recent</span>
+                                                <span className="mini-time">{rev.createdAt ? new Date(rev.createdAt).toLocaleDateString() : 'Recent'}</span>
                                             </div>
                                         </div>
                                     </div>
                                 ))
                             )}
-                        </div>
-                        <div style={{ textAlign: 'right', marginTop: '12px' }}>
-                            <button className="view-more-sm-btn">View More</button>
                         </div>
                     </div>
                 </div>

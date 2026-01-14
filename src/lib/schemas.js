@@ -6,7 +6,7 @@ import { z } from 'zod';
  */
 export const UserSchema = z.object({
     uid: z.string(),
-    email: z.string().email(),
+    email: z.string().email().optional().or(z.literal('')), // Relaxed for public view or phone-only users
     displayName: z.string().nullable().optional(),
     photoURL: z.string().url().nullable().optional(),
     role: z.enum(['worker', 'hire', 'admin']).nullable().optional(),
