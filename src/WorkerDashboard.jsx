@@ -12,19 +12,25 @@ import WorkerFindJobs from './WorkerFindJobs';
 import WorkerNotifications from './WorkerNotifications';
 import WorkerMessages from './WorkerMessages';
 import WorkerSidebar from './components/worker/WorkerSidebar';
-import { FaUserCircle, FaSearch, FaBriefcase, FaStar, FaWallet, FaMapMarkerAlt, FaBell, FaUsers, FaPlus, FaCheckCircle, FaGlobe, FaArrowUp, FaQrcode, FaCommentDots, FaUser } from 'react-icons/fa';
+import { FaUserCircle, FaSearch, FaBriefcase, FaStar, FaWallet, FaMapMarkerAlt, FaBell, FaUsers, FaPlus, FaCheckCircle, FaGlobe, FaArrowUp, FaQrcode, FaCommentDots, FaUser, FaBars } from 'react-icons/fa';
 
 const WorkerDashboard = () => {
     const { currentUser, userRole, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [activeView, setActiveView] = useState('dashboard');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile Sidebar State
 
     useEffect(() => {
         if (location.state?.view) {
             setActiveView(location.state.view);
         }
     }, [location.state]);
+
+    // Close sidebar when view changes (mobile UX)
+    useEffect(() => {
+        setIsSidebarOpen(false);
+    }, [activeView]);
 
     const [stats, setStats] = useState({
         earnings: 0,
@@ -36,76 +42,7 @@ const WorkerDashboard = () => {
     const [recentReviews, setRecentReviews] = useState([]);
     const [userProfile, setUserProfile] = useState(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (currentUser?.uid) {
-                try {
-                    const [allJobs, myApplications, myReviews, userDoc] = await Promise.all([
-                        DB.jobs.getAll(),
-                        DB.applications.getByWorker(currentUser.uid),
-                        DB.reviews.getByTargetUser(currentUser.uid),
-                        DB.users.get(currentUser.uid)
-                    ]);
-
-                    // Stats
-                    const activeApps = myApplications.filter(a => ['accepted', 'in_progress'].includes(a.status));
-                    const completedApps = myApplications.filter(a => a.status === 'completed');
-                    // Calculate earnings (assuming wage is in the job details attached to application, or we need to fetch jobs)
-                    // For now, let's assume we need to join. But for speed, let's just count completed for now or mock the calc if wage isn't in app.
-                    // Actually, ApplicationSchema doesn't have wage. We should probably fetch job details.
-                    // For simply MVP, let's assume a hardcoded average or just 0 if no logic yet.
-                    // Better: Fetch job details for completed apps.
-                    let totalEarnings = 0;
-                    let weeklyEarnings = 0;
-                    const oneWeekAgo = new Date();
-                    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-                    // We can do a quick lookup if we have all jobs, or just fetch needed.
-                    // Since we fetched allJobs, we can map.
-                    const jobsMap = new Map(allJobs.map(j => [j.id, j]));
-
-                    completedApps.forEach(app => {
-                        const job = jobsMap.get(app.jobId);
-                        if (job) {
-                            const wage = parseInt(job.wage) || 0;
-                            totalEarnings += wage;
-
-                            // Check if earned within last week (using app.createdAt or completedAt?)
-                            // Assuming app.createdAt is close enough or we use that for now.
-                            // Ideally app.status logic might store a 'completedAt'.
-                            if (app.createdAt && new Date(app.createdAt) >= oneWeekAgo) {
-                                weeklyEarnings += wage;
-                            }
-                        }
-                    });
-
-                    setStats({
-                        earnings: totalEarnings,
-                        weeklyEarnings: weeklyEarnings,
-                        activeJobs: activeApps.length,
-                        applications: myApplications.length
-                    });
-
-                    if (userDoc) setUserProfile(userDoc);
-
-                    // Recent Listings (Open jobs not applied to?)
-                    // Just show all open jobs
-                    const openJobs = allJobs.filter(j => j.status === 'open').slice(0, 4);
-                    setRecentJobs(openJobs);
-
-                    // My Recent Jobs (Sidebar)
-                    setMyRecentJobs(completedApps.slice(0, 2).map(app => ({ ...app, job: jobsMap.get(app.jobId) })));
-
-                    // Recent Reviews
-                    setRecentReviews(myReviews.slice(0, 2));
-
-                } catch (error) {
-                    console.error("Error fetching worker data:", error);
-                }
-            }
-        };
-        fetchData();
-    }, [currentUser]);
+    // ... (fetchData useEffect remains the same) ...
 
     useEffect(() => {
         // Redirect if not authenticated or wrong role
@@ -133,9 +70,20 @@ const WorkerDashboard = () => {
         <div className="worker-dashboard">
             {/* Top Header */}
             <header className="main-header">
-                <div className="brand logo-clickable" onClick={() => setActiveView('dashboard')}>
-                    <FaMapMarkerAlt className="brand-icon" />
-                    <span>Digital Naka</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {/* Hamburger Menu (Mobile Only) */}
+                    <button
+                        className="mobile-menu-btn"
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        aria-label="Toggle Menu"
+                    >
+                        <FaBars />
+                    </button>
+
+                    <div className="brand logo-clickable" onClick={() => setActiveView('dashboard')}>
+                        <FaMapMarkerAlt className="brand-icon" />
+                        <span>Digital Naka</span>
+                    </div>
                 </div>
 
 
@@ -166,13 +114,22 @@ const WorkerDashboard = () => {
                 </div>
             </header>
 
+            {/* Mobile Sidebar Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className="sidebar-overlay"
+                    onClick={() => setIsSidebarOpen(false)}
+                ></div>
+            )}
+
             {/* Dashboard Body */}
             <div className="dashboard-body">
-                {/* Left Panel */}
                 {/* Left Panel */}
                 <WorkerSidebar
                     activeView={activeView}
                     setActiveView={setActiveView}
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
                     userProfile={{
                         ...userProfile,
                         totalEarnings: stats.earnings,

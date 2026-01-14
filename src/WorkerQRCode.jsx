@@ -60,7 +60,7 @@ const WorkerQRCode = () => {
         fetchData();
     }, [currentUser]);
 
-    const profileUrl = currentUser ? `${window.location.origin}/profile/${currentUser.uid}` : "";
+    const profileUrl = currentUser ? `${window.location.origin}/worker-profile/${currentUser.uid}` : "";
 
     const downloadQR = () => {
         const svg = document.getElementById("worker-qr-code");

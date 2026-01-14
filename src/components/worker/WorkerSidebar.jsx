@@ -3,22 +3,23 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaUserCircle, FaSearch, FaBriefcase, FaStar, FaWallet, FaMapMarkerAlt, FaCheckCircle, FaGlobe, FaQrcode, FaCommentDots, FaUser } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 
-const WorkerSidebar = ({ activeView, setActiveView, userProfile }) => {
+const WorkerSidebar = ({ activeView, setActiveView, userProfile, isOpen, onClose }) => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
     const handleNavigation = (view) => {
+        if (onClose) onClose(); // Close sidebar on mobile when nav item clicked
+
         if (setActiveView) {
             setActiveView(view);
         } else {
-            // If setActiveView is not provided (e.g. from Profile page), navigate to dashboard with state
             navigate('/worker-dashboard', { state: { view } });
         }
     };
 
     return (
-        <aside className="left-panel">
+        <aside className={`left-panel ${isOpen ? 'open' : ''}`}>
             <div className="profile-card">
                 <div className="profile-image-wrapper">
                     <img

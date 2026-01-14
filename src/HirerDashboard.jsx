@@ -93,6 +93,14 @@ const HirerDashboard = () => {
                 </div>
             </header>
 
+            {/* Mobile Sidebar Overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="sidebar-overlay"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                ></div>
+            )}
+
             {/* 2. BODY GRID (Left Fixed | Center & Right handled by Router) */}
             <div className={`dashboard-grid-container ${!showRecentHires ? 'full-width' : ''}`}>
 
@@ -114,49 +122,49 @@ const HirerDashboard = () => {
                     <nav className="left-nav-menu">
                         <a
                             href="#"
-                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard'); }}
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard'); setIsMobileMenuOpen(false); }}
                             className={`left-nav-item ${location.pathname === '/hire-dashboard' || location.pathname === '/hire-dashboard/' ? 'active' : ''}`}
                         >
                             <LayoutDashboard size={18} /> Dashboard
                         </a>
                         <a
                             href="#"
-                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/post-job'); }}
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/post-job'); setIsMobileMenuOpen(false); }}
                             className={`left-nav-item ${isPostJobPage ? 'active' : ''}`}
                         >
                             <Plus size={18} /> Post Job
                         </a>
                         <a
                             href="#"
-                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/find-workers'); }}
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/find-workers'); setIsMobileMenuOpen(false); }}
                             className={`left-nav-item ${isFindWorkersPage ? 'active' : ''}`}
                         >
                             <Users size={18} /> Find Workers
                         </a>
                         <a
                             href="#"
-                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/shortlisted-workers'); }}
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/shortlisted-workers'); setIsMobileMenuOpen(false); }}
                             className={`left-nav-item ${isShortlistedPage ? 'active' : ''}`}
                         >
                             <Briefcase size={18} /> Shortlisted
                         </a>
                         <a
                             href="#"
-                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/messages'); }}
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/messages'); setIsMobileMenuOpen(false); }}
                             className={`left-nav-item ${isMessagesPage ? 'active' : ''}`}
                         >
                             <MessageSquare size={18} /> Messages
                         </a>
                         <a
                             href="#"
-                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/notifications'); }}
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/notifications'); setIsMobileMenuOpen(false); }}
                             className={`left-nav-item ${isNotificationsPage ? 'active' : ''}`}
                         >
                             <Bell size={18} /> Notifications
                         </a>
                         <a
                             href="#"
-                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/reports'); }}
+                            onClick={(e) => { e.preventDefault(); navigate('/hire-dashboard/reports'); setIsMobileMenuOpen(false); }}
                             className={`left-nav-item ${isReportsPage ? 'active' : ''}`}
                         >
                             <FileText size={18} /> Reports

@@ -688,6 +688,110 @@
 
 /* ================= Responsiveness ================= */
 
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        display: block;
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        backdrop-filter: blur(2px);
+    }
+
+    .left-sidebar-fixed {
+        position: fixed;
+        left: -300px;
+        /* Hidden by default */
+        top: 0;
+        bottom: 0;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease-in-out;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .left-sidebar-fixed.mobile-open {
+        left: 0;
+        /* Slide in */
+    }
+
+    .dashboard-grid-container {
+        grid-template-columns: 1fr !important;
+        /* Stack content */
+        margin-left: 0 !important;
+        /* Remove sidebar margin */
+    }
+
+    .top-nav {
+        display: none;
+    }
+
+    /* The existing .mobile-menu-toggle was display: flex; now it's display: block; */
+    /* .mobile-menu-toggle {
+        display: flex;
+    } */
+
+    /* The existing .left-sidebar-fixed was display: none; */
+    /* .left-sidebar-fixed {
+        display: none;
+        /* Default hidden on mobile */
+    /* } */
+
+    /* The existing .left-sidebar-fixed.mobile-open was display: flex; */
+    /* .left-sidebar-fixed.mobile-open {
+        display: flex;
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        background: var(--bg-color);
+        z-index: 1000;
+        border-right: 1px solid var(--border-color);
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+    } */
+
+    .right-sidebar-scrollable {
+        display: none;
+        /* Hide right sidebar or move to bottom if needed */
+    }
+
+    .main-header {
+        position: relative;
+        /* Unfix header on mobile if needed */
+    }
+
+    body,
+    html {
+        height: auto;
+        overflow-y: auto;
+    }
+
+    .hirer-dashboard {
+        height: auto;
+    }
+
+    .center-content-scrollable {
+        height: auto;
+        overflow: visible;
+    }
+
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Tablet / Small Laptop: Collapse Right Sidebar below Main Content */
 @media (max-width: 1200px) {
     .dashboard-grid-container {
         /* Collapse Right Sidebar first or just resize columns */

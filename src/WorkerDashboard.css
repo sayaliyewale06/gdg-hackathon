@@ -48,6 +48,40 @@
 
 /* Body styles moved to global index.css to prevent conflicts */
 
+.mobile-menu-btn {
+    display: none;
+    /* Hidden on desktop */
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--primary-text);
+    cursor: pointer;
+    padding: 8px;
+}
+
+.sidebar-overlay {
+    display: none;
+    /* Hidden on desktop */
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        backdrop-filter: blur(2px);
+    }
+}
+
 .worker-dashboard {
     height: 100vh;
     display: flex;
@@ -691,16 +725,27 @@
     }
 
     .left-panel {
-        width: 100%;
-        height: auto;
-        padding: 20px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        width: 280px;
+        /* Fixed width for slide-out */
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: -300px;
+        /* Hidden by default */
+        z-index: 1000;
+        transition: left 0.3s ease-in-out;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        padding: 24px;
+    }
+
+    .left-panel.open {
+        left: 0;
+        /* Slide in */
     }
 
     .left-menu {
-        display: none;
-        /* Hide sidebar menu on mobile, maybe use hamburger later */
-        /* For now, maybe just show stats or simplify */
+        display: flex;
+        /* Show menu since it's inside the slide-out sidebar */
     }
 
     .main-content-area {
