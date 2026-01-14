@@ -15,6 +15,18 @@ export const UserSchema = z.object({
     reviewCount: z.number().default(0).optional(),
     createdAt: z.string().datetime().optional(), // ISO string
     lastLogin: z.string().datetime().optional(),
+
+    // Profile Fields
+    about: z.string().optional(),
+    skills: z.array(z.string()).optional(),
+    experience: z.string().optional(),
+    location: z.string().optional(),
+    availability: z.string().optional(),
+    profession: z.string().optional(), // e.g. "Electrician", distinct from role="worker"
+
+    // Earnings
+    totalEarnings: z.number().default(0).optional(),
+    weeklyEarnings: z.number().default(0).optional(),
 });
 
 /**

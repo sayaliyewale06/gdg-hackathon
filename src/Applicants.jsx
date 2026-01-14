@@ -87,7 +87,7 @@ const Applicants = () => {
         skill: 'All Skills',
         location: 'All Locations',
         minSalary: 0,
-        maxSalary: 2000
+        maxSalary: 5000 // Increased default max range
     });
 
     const handleFilterChange = (e) => {
@@ -96,6 +96,42 @@ const Applicants = () => {
             ...prev,
             [name]: value
         }));
+    };
+
+    // Derived state for filtered applications
+    const filteredApplications = applications.filter(app => {
+        // 1. Skill Filter (checks Job Title or Worker Role)
+        if (filters.skill !== 'All Skills') {
+            const skill = filters.skill.toLowerCase();
+            const titleMatches = app.jobTitle?.toLowerCase().includes(skill);
+            const roleMatches = app.workerRole?.toLowerCase().includes(skill);
+            if (!titleMatches && !roleMatches) return false;
+        }
+
+        // 2. Location Filter
+        if (filters.location !== 'All Locations') {
+            const loc = filters.location.toLowerCase();
+            const workerLoc = app.workerLocation?.toLowerCase() || '';
+            if (!workerLoc.includes(loc)) return false;
+        }
+
+        // 3. Salary/Wage Filter
+        const wage = parseInt(app.jobWage) || 0;
+        const min = parseInt(filters.minSalary) || 0;
+        const max = parseInt(filters.maxSalary) || 999999;
+
+        if (wage < min || wage > max) return false;
+
+        return true;
+    });
+
+    const clearFilters = () => {
+        setFilters({
+            skill: 'All Skills',
+            location: 'All Locations',
+            minSalary: 0,
+            maxSalary: 5000
+        });
     };
 
     return (
@@ -125,6 +161,8 @@ const Applicants = () => {
                     <option>Masonry</option>
                     <option>Plumbing</option>
                     <option>Electrical</option>
+                    <option>Carpentry</option>
+                    <option>Painting</option>
                 </select>
 
                 <select
@@ -135,7 +173,9 @@ const Applicants = () => {
                 >
                     <option>All Locations</option>
                     <option>Pune</option>
+                    <option>Mumbai</option>
                     <option>Delhi</option>
+                    <option>Bangalore</option>
                 </select>
 
                 <div className="salary-range">
@@ -146,6 +186,7 @@ const Applicants = () => {
                         className="salary-input"
                         value={filters.minSalary}
                         onChange={handleFilterChange}
+                        placeholder="0"
                     />
                 </div>
 
@@ -157,28 +198,31 @@ const Applicants = () => {
                         className="salary-input"
                         value={filters.maxSalary}
                         onChange={handleFilterChange}
+                        placeholder="Max"
                     />
                 </div>
 
                 <div className="filter-actions">
-                    <span className="clear-filters" onClick={() => setFilters({ skill: 'All Skills', location: 'All Locations', minSalary: 0, maxSalary: 2000 })}>
+                    <span className="clear-filters" onClick={clearFilters} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
                         Clear Filters
                     </span>
-                    <button className="btn-filter"> - Filter</button>
+                    <button className="btn-filter" style={{ opacity: 0.7, cursor: 'default' }}>Filter</button>
                 </div>
             </div>
 
             {/* List */}
-            <h2 className="applicants-list-header">Applications ({applications.length})</h2>
+            <h2 className="applicants-list-header">Applications ({filteredApplications.length})</h2>
 
             {loading ? (
                 <div style={{ padding: '40px', textAlign: 'center' }}>Loading applications...</div>
             ) : (
                 <div className="applicants-list">
-                    {applications.length === 0 ? (
-                        <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>No applications received yet.</div>
+                    {filteredApplications.length === 0 ? (
+                        <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                            {applications.length > 0 ? 'No applicants match your filters.' : 'No applications received yet.'}
+                        </div>
                     ) : (
-                        applications.map(app => (
+                        filteredApplications.map(app => (
                             <div className="applicant-card" key={app.id} style={{ borderLeft: app.status === 'accepted' ? '4px solid #4CAF50' : 'none' }}>
                                 {/* 1. Image */}
                                 <div className="applicant-img-container">
@@ -186,12 +230,22 @@ const Applicants = () => {
                                         src={app.workerPic || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
                                         alt={app.workerName}
                                         className="applicant-img"
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => navigate(`/worker-profile/${app.workerId}`)}
                                     />
                                 </div>
 
                                 {/* 2. Main Info */}
                                 <div className="applicant-main-info">
-                                    <h3 className="applicant-name">{app.workerName}</h3>
+                                    <h3
+                                        className="applicant-name"
+                                        style={{ cursor: 'pointer', color: '#5a8a8f' }} // Add color to indicate clickability
+                                        onClick={() => navigate(`/worker-profile/${app.workerId}`)}
+                                        onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
+                                        onMouseOut={(e) => e.target.style.textDecoration = 'none'}
+                                    >
+                                        {app.workerName}
+                                    </h3>
                                     <p className="applicant-role">Applied for: <strong>{app.jobTitle}</strong></p>
                                     <div className="applicant-location">
                                         <MapPin size={14} /> {app.workerLocation || "Unknown"}
@@ -233,6 +287,14 @@ const Applicants = () => {
 
                                 {/* 5. Action */}
                                 <div className="action-buttons" style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                                    <button
+                                        className="btn-shortlist"
+                                        style={{ background: '#5a8a8f', color: 'white', border: 'none', marginBottom: '4px' }}
+                                        onClick={() => navigate(`/worker-profile/${app.workerId}`)}
+                                    >
+                                        View Profile
+                                    </button>
+
                                     {app.status !== 'accepted' && (
                                         <button
                                             className="btn-shortlist"

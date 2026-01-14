@@ -8,7 +8,14 @@ import { FaChevronDown, FaSearch, FaBriefcase, FaTruck, FaBolt, FaCar, FaMapMark
 const WorkerActiveJobs = () => {
     const { currentUser } = useAuth();
     const [jobs, setJobs] = useState([]);
+    const [filteredJobs, setFilteredJobs] = useState([]); // New state for filtered list
     const [loading, setLoading] = useState(true);
+
+    // Filters
+    const [filterCategory, setFilterCategory] = useState('All');
+    const [filterLocation, setFilterLocation] = useState('All');
+    const [sortBy, setSortBy] = useState('Newest');
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         const fetchActiveJobs = async () => {
@@ -23,22 +30,14 @@ const WorkerActiveJobs = () => {
                     );
 
                     // Fetch job details for each active application
-                    // TODO: Optimize by fetching only needed jobs or using a map from prev context
-                    // For now, simple parallel fetch
                     const jobPromises = activeApps.map(async (app) => {
                         const job = await DB.jobs.get(app.jobId);
-                        return { ...job, applicationStatus: app.status, applicationId: app.id };
+                        return { ...job, applicationStatus: app.status, applicationId: app.id, appliedAt: app.createdAt };
                     });
 
                     const activeJobsData = await Promise.all(jobPromises);
-
-                    // Sort: In Progress first, then Accepted, then Completed
-                    const sortedJobs = activeJobsData.sort((a, b) => {
-                        const statusOrder = { 'in_progress': 0, 'accepted': 1, 'completed': 2 };
-                        return statusOrder[a.applicationStatus] - statusOrder[b.applicationStatus];
-                    });
-
-                    setJobs(sortedJobs);
+                    setJobs(activeJobsData);
+                    setFilteredJobs(activeJobsData);
 
                 } catch (error) {
                     console.error("Error fetching active jobs:", error);
@@ -50,6 +49,50 @@ const WorkerActiveJobs = () => {
 
         fetchActiveJobs();
     }, [currentUser]);
+
+    // Apply Filters
+    useEffect(() => {
+        let result = [...jobs];
+
+        // Search
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(j =>
+                j.title.toLowerCase().includes(query) ||
+                j.location.toLowerCase().includes(query)
+            );
+        }
+
+        // Category
+        if (filterCategory !== 'All') {
+            result = result.filter(j => j.category === filterCategory);
+        }
+
+        // Location
+        if (filterLocation !== 'All') {
+            result = result.filter(j => j.location && j.location.includes(filterLocation));
+        }
+
+        // Sort
+        result.sort((a, b) => {
+            if (sortBy === 'Newest') {
+                return new Date(b.appliedAt || b.createdAt) - new Date(a.appliedAt || a.createdAt);
+            } else if (sortBy === 'Oldest') {
+                return new Date(a.appliedAt || a.createdAt) - new Date(b.appliedAt || b.createdAt);
+            }
+            return 0;
+        });
+
+        setFilteredJobs(result);
+
+    }, [jobs, searchQuery, filterCategory, filterLocation, sortBy]);
+
+    const handleClearFilters = () => {
+        setSearchQuery('');
+        setFilterCategory('All');
+        setFilterLocation('All');
+        setSortBy('Newest');
+    };
 
     // Helper to get icon based on category
     const getCategoryIcon = (category) => {
@@ -73,7 +116,7 @@ const WorkerActiveJobs = () => {
             </div>
 
             <div className="section-heading-row" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1 style={{ margin: 0 }}>Active Jobs</h1>
+                <h1 style={{ margin: 0 }}>Active Jobs {filteredJobs.length > 0 && <span style={{ fontSize: '1rem', color: '#666' }}>({filteredJobs.length})</span>}</h1>
                 {jobs.length === 0 && !loading && (
                     <button
                         onClick={seedDatabase}
@@ -95,22 +138,60 @@ const WorkerActiveJobs = () => {
             {/* Filter Bar */}
             <div className="aj-filter-bar">
                 <div className="aj-filter-group">
-                    <label>All</label>
-                    <FaChevronDown size={10} />
+                    <select
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                        style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: 500 }}
+                    >
+                        <option value="All">All Categories</option>
+                        <option value="Electrician">Electrician</option>
+                        <option value="Plumber">Plumber</option>
+                        <option value="Mason">Mason</option>
+                        <option value="Driver">Driver</option>
+                        <option value="Labor">Labor</option>
+                    </select>
                 </div>
                 <div className="aj-separator"></div>
                 <div className="aj-filter-group">
-                    <label>All Locations</label>
-                    <FaChevronDown size={10} />
+                    <select
+                        value={filterLocation}
+                        onChange={(e) => setFilterLocation(e.target.value)}
+                        style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: 500 }}
+                    >
+                        <option value="All">All Locations</option>
+                        <option value="Pune">Pune</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Bangalore">Bangalore</option>
+                    </select>
                 </div>
                 <div className="aj-separator"></div>
                 <div className="aj-filter-group">
-                    <label>Sort by <strong>Newest</strong></label>
-                    <FaChevronDown size={10} />
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: 500 }}
+                    >
+                        <option value="Newest">Sort: Newest</option>
+                        <option value="Oldest">Sort: Oldest</option>
+                    </select>
                 </div>
+                <div className="aj-separator"></div>
+                <button
+                    onClick={handleClearFilters}
+                    style={{ background: 'transparent', border: 'none', color: '#EF5B5B', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500 }}
+                >
+                    Clear
+                </button>
+
                 <div className="aj-search-wrapper">
                     <FaSearch color="#999" />
-                    <input type="text" placeholder="Search" />
+                    <input
+                        type="text"
+                        placeholder="Search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                 </div>
             </div>
 
@@ -118,10 +199,10 @@ const WorkerActiveJobs = () => {
             <div className="aj-jobs-list">
                 {loading ? (
                     <div style={{ color: '#555', padding: '20px' }}>Loading jobs...</div>
-                ) : jobs.length === 0 ? (
-                    <div style={{ color: '#888', padding: '20px' }}>No active jobs found.</div>
+                ) : filteredJobs.length === 0 ? (
+                    <div style={{ color: '#888', padding: '20px' }}>No active jobs found matching filters.</div>
                 ) : (
-                    jobs.map((job) => (
+                    filteredJobs.map((job) => (
                         <div className="aj-job-row" key={job.id}>
                             {/* Left Section: Icon + Details */}
                             <div className="aj-row-left">

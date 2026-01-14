@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import './WorkerDashboard.css';
 import { DB } from './lib/db';
@@ -11,7 +11,8 @@ import WorkerActiveJobs from './WorkerActiveJobs';
 import WorkerFindJobs from './WorkerFindJobs';
 import WorkerNotifications from './WorkerNotifications';
 import WorkerMessages from './WorkerMessages';
-import { FaUserCircle, FaSearch, FaBriefcase, FaStar, FaWallet, FaMapMarkerAlt, FaBell, FaUsers, FaPlus, FaCheckCircle, FaGlobe, FaArrowUp, FaQrcode, FaCommentDots } from 'react-icons/fa';
+import WorkerSidebar from './components/worker/WorkerSidebar';
+import { FaUserCircle, FaSearch, FaBriefcase, FaStar, FaWallet, FaMapMarkerAlt, FaBell, FaUsers, FaPlus, FaCheckCircle, FaGlobe, FaArrowUp, FaQrcode, FaCommentDots, FaUser } from 'react-icons/fa';
 
 const WorkerDashboard = () => {
     const { currentUser, userRole, logout } = useAuth();
@@ -55,17 +56,32 @@ const WorkerDashboard = () => {
                     // For simply MVP, let's assume a hardcoded average or just 0 if no logic yet.
                     // Better: Fetch job details for completed apps.
                     let totalEarnings = 0;
+                    let weeklyEarnings = 0;
+                    const oneWeekAgo = new Date();
+                    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
                     // We can do a quick lookup if we have all jobs, or just fetch needed.
                     // Since we fetched allJobs, we can map.
                     const jobsMap = new Map(allJobs.map(j => [j.id, j]));
 
                     completedApps.forEach(app => {
                         const job = jobsMap.get(app.jobId);
-                        if (job) totalEarnings += job.wage;
+                        if (job) {
+                            const wage = parseInt(job.wage) || 0;
+                            totalEarnings += wage;
+
+                            // Check if earned within last week (using app.createdAt or completedAt?)
+                            // Assuming app.createdAt is close enough or we use that for now.
+                            // Ideally app.status logic might store a 'completedAt'.
+                            if (app.createdAt && new Date(app.createdAt) >= oneWeekAgo) {
+                                weeklyEarnings += wage;
+                            }
+                        }
                     });
 
                     setStats({
                         earnings: totalEarnings,
+                        weeklyEarnings: weeklyEarnings,
                         activeJobs: activeApps.length,
                         applications: myApplications.length
                     });
@@ -153,58 +169,16 @@ const WorkerDashboard = () => {
             {/* Dashboard Body */}
             <div className="dashboard-body">
                 {/* Left Panel */}
-                <aside className="left-panel">
-                    <div className="profile-card">
-                        <div className="profile-image-wrapper">
-                            <img
-                                src={currentUser.photoURL || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLe5PABjXc17cjIMOibECLM7ppDwMmiDg6Dw&s"}
-                                alt={currentUser.displayName || "Worker"}
-                                className="profile-img"
-                            />
-                        </div>
-                        <div className="profile-details">
-                            <h2>{currentUser.displayName || "Worker"}</h2>
-                            <p className="role">{userProfile?.status || "Verified Worker"}</p>
-                            <p className="phone">{userProfile?.phone || currentUser.email || "+91 98765 43210"}</p>
-                        </div>
-                    </div>
-
-                    <nav className="left-menu">
-                        <a href="#" className={`menu-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}><FaBriefcase /> Dashboard</a>
-                        <a href="#" className={`menu-item ${activeView === 'findjobs' ? 'active' : ''}`} onClick={() => setActiveView('findjobs')}><FaSearch /> Find Jobs</a>
-                        <a href="#" className={`menu-item ${activeView === 'activejobs' ? 'active' : ''}`} onClick={() => setActiveView('activejobs')}><FaBriefcase /> Active Jobs</a>
-                        <a href="#" className={`menu-item ${activeView === 'myjobs' ? 'active' : ''}`} onClick={() => setActiveView('myjobs')}><FaUserCircle /> My Jobs</a>
-                        <a href="#" className={`menu-item ${activeView === 'messages' ? 'active' : ''}`} onClick={() => setActiveView('messages')}><FaCommentDots /> Messages</a>
-                        <a href="#" className={`menu-item ${activeView === 'reviews' ? 'active' : ''}`} onClick={() => setActiveView('reviews')}><FaStar /> Reviews</a>
-                        <a href="#" className={`menu-item ${activeView === 'qrcode' ? 'active' : ''}`} onClick={() => setActiveView('qrcode')}><FaQrcode /> My QR Code</a>
-                        <a href="#" className={`menu-item ${activeView === 'earnings' ? 'active' : ''}`} onClick={() => setActiveView('earnings')}><FaWallet /> Earnings</a>
-                    </nav>
-
-                    <div className="side-stats-panel" style={{ height: 'auto', padding: '20px' }}>
-                        <div style={{ marginBottom: '8px', color: 'var(--secondary-text)', fontSize: '0.9rem' }}>Total Earnings</div>
-                        <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--primary-text)' }}>₹{stats.earnings}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.9rem' }}>
-                            <span style={{ color: 'var(--secondary-text)' }}>This Week</span>
-                            <span style={{ fontWeight: '600' }}>₹{stats.earnings > 0 ? stats.earnings : 0}</span>
-                        </div>
-                        <button className="sidebar-action-btn" style={{ marginTop: '20px' }}>Find Jobs</button>
-                    </div>
-
-                    <div className="verification-list">
-                        <div className="verify-item">
-                            <FaCheckCircle className="verify-icon" /> Profile Verified
-                        </div>
-                        <div className="verify-item">
-                            <FaCheckCircle className="verify-icon" /> Phone number verified
-                        </div>
-                        <div className="verify-item">
-                            <FaCheckCircle className="verify-icon" /> Location-based hiring
-                        </div>
-                    </div>
-                    <div className="lang-selector">
-                        <FaGlobe /> English
-                    </div>
-                </aside>
+                {/* Left Panel */}
+                <WorkerSidebar
+                    activeView={activeView}
+                    setActiveView={setActiveView}
+                    userProfile={{
+                        ...userProfile,
+                        totalEarnings: stats.earnings,
+                        weeklyEarnings: stats.weeklyEarnings
+                    }}
+                />
 
                 {/* Main Content Area (Center + Right) */}
                 <main className="main-content-area" style={{ display: ['earnings', 'myjobs', 'reviews', 'qrcode', 'activejobs', 'findjobs', 'notifications', 'messages'].includes(activeView) ? 'block' : 'grid', width: '100%' }}>

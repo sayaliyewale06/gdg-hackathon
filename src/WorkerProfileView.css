@@ -1,0 +1,333 @@
+/* WorkerProfileView.css */
+
+.worker-profile-view-page {
+    padding: 24px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background-color: #f5f1eb;
+    /* Updated to #f5f1eb */
+    /* Keeping with warm beige theme */
+}
+
+.profile-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.back-btn {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    color: #6b6b6b;
+    cursor: pointer;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-main, sans-serif);
+}
+
+.back-btn:hover {
+    color: #5a8a8f;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.message-btn,
+.hire-btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-main, sans-serif);
+}
+
+.message-btn {
+    background: white;
+    border: 2px solid #5a8a8f;
+    color: #5a8a8f;
+}
+
+.message-btn:hover {
+    background: #5a8a8f;
+    color: white;
+}
+
+.hire-btn {
+    background: #5a8a8f;
+    border: none;
+    color: white;
+}
+
+.hire-btn:hover {
+    background: #4a7278;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(90, 138, 143, 0.3);
+}
+
+/* Profile Content Layout */
+.profile-view-content {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 32px;
+}
+
+/* Worker Profile Card (Left) */
+.worker-profile-card {
+    background: white;
+    padding: 32px;
+    border-radius: 16px;
+    /* Matched border-radius */
+    box-shadow: 0 2px 8px rgba(74, 64, 54, 0.08);
+    /* Matched shadow */
+    text-align: center;
+    height: fit-content;
+    position: sticky;
+    top: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.profile-photo {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 6px solid #E4DDD6;
+    /* Matched border style from sidebar */
+}
+
+.profile-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.worker-profile-card h2 {
+    color: #4A4036;
+    margin-bottom: 8px;
+}
+
+.role-badge {
+    color: #8C8177;
+    font-weight: 500;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.rating {
+    margin-bottom: 24px;
+}
+
+.stars {
+    color: #F4B400;
+    margin-bottom: 4px;
+}
+
+.rating-text {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.contact-info {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #eee;
+}
+
+.info-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.info-item .icon {
+    font-size: 1.2rem;
+    min-width: 24px;
+}
+
+.info-item .label {
+    display: block;
+    font-size: 0.85rem;
+    color: #8C8177;
+    margin-bottom: 2px;
+}
+
+.info-item .value {
+    color: #4A4036;
+    font-weight: 500;
+}
+
+.verification-status {
+    margin-top: 24px;
+    text-align: left;
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.verification-status h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: #4A4036;
+}
+
+.verification-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.badge {
+    font-size: 0.85rem;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge.verified {
+    color: #2e7d32;
+    font-weight: 500;
+}
+
+/* Worker Details Panel (Right) */
+.worker-details-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.details-section {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(74, 64, 54, 0.08);
+}
+
+.details-section h3 {
+    color: #4A4036;
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 12px;
+}
+
+/* Skills */
+.skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.skill-tag {
+    background: #EAE3DA;
+    color: #4A4036;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Employment History */
+.employment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.employment-card {
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.job-info h4 {
+    margin: 0 0 4px 0;
+    color: #4A4036;
+}
+
+.job-info p {
+    margin: 2px 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.job-amount {
+    text-align: right;
+}
+
+.job-amount .amount {
+    display: block;
+    font-weight: 700;
+    color: #4A4036;
+    font-size: 1.1rem;
+}
+
+.job-amount .status {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: #e0f2f1;
+    color: #00695c;
+    display: inline-block;
+    margin-top: 4px;
+}
+
+/* Reviews */
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.review-card {
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.review-header h4 {
+    margin: 0;
+    color: #4A4036;
+}
+
+.review-comment {
+    color: #555;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .profile-view-content {
+        grid-template-columns: 1fr;
+    }
+
+    .worker-profile-card {
+        position: relative;
+        top: 0;
+    }
+}

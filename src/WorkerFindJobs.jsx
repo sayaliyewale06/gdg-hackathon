@@ -29,6 +29,7 @@ const WorkerFindJobs = () => {
     // Filters
     const [filterCategory, setFilterCategory] = useState('All');
     const [filterWage, setFilterWage] = useState('All');
+    const [filterLocation, setFilterLocation] = useState('All');
 
     useEffect(() => {
         const fetchJobsAndApplications = async () => {
@@ -84,9 +85,21 @@ const WorkerFindJobs = () => {
             result = result.filter(j => Number(j.wage) > 800);
         }
 
+        if (filterLocation !== 'All') {
+            // Mock location logic: exact match for demo
+            result = result.filter(j => j.location.includes(filterLocation));
+        }
+
         setFilteredJobs(result);
 
-    }, [searchQuery, filterCategory, filterWage, jobs]);
+    }, [searchQuery, filterCategory, filterWage, filterLocation, jobs]);
+
+    const handleClearFilters = () => {
+        setSearchQuery('');
+        setFilterCategory('All');
+        setFilterWage('All');
+        setFilterLocation('All');
+    };
 
     const handleApplyClick = (job) => {
         if (!currentUser || appliedJobIds.has(job.id)) return;
@@ -152,15 +165,27 @@ const WorkerFindJobs = () => {
                     </div>
                 </div>
                 <div className="filter-row bottom">
-                    <div className="filter-input-wrapper dropdown small">
-                        <span>Filters: All</span>
-                        <FaChevronDown className="filter-chevron" />
-                    </div>
                     <div className="filter-input-wrapper dropdown location-dropdown">
-                        <span>Within 5 km</span>
-                        <FaChevronDown className="filter-chevron" />
+                        <select
+                            value={filterLocation}
+                            onChange={(e) => setFilterLocation(e.target.value)}
+                            style={{ border: 'none', background: 'transparent', width: '100%', outline: 'none' }}
+                        >
+                            <option value="All">All Locations</option>
+                            <option value="Pune">Pune</option>
+                            <option value="Mumbai">Mumbai</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Bangalore">Bangalore</option>
+                        </select>
                     </div>
-                    <button className="search-btn-orange">Search</button>
+
+                    <button
+                        className="search-btn-orange"
+                        onClick={handleClearFilters}
+                        style={{ background: 'white', color: '#EF5B5B', border: '1px solid #EF5B5B' }}
+                    >
+                        Clear Filters
+                    </button>
                 </div>
             </div>
 

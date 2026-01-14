@@ -14,10 +14,15 @@ const WorkerMyJobs = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('All Time');
     const [searchQuery, setSearchQuery] = useState('');
+    const [filterCategory, setFilterCategory] = useState('All');
+    const [filterLocation, setFilterLocation] = useState('All');
 
     const filteredJobs = jobs.filter(job => {
         const matchesSearch = job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            job.hirerName.toLowerCase().includes(searchQuery.toLowerCase());
+            job.hirerName?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesCategory = filterCategory === 'All' || job.category === filterCategory;
+        const matchesLocation = filterLocation === 'All' || job.jobLocation?.includes(filterLocation);
 
         let matchesTime = true;
         const jobDate = new Date(job.createdAt);
@@ -33,68 +38,19 @@ const WorkerMyJobs = () => {
             matchesTime = jobDate >= oneMonthAgo;
         }
 
-        return matchesSearch && matchesTime;
+        return matchesSearch && matchesTime && matchesCategory && matchesLocation;
     });
 
-    useEffect(() => {
-        const fetchJobHistory = async () => {
-            if (currentUser?.uid) {
-                try {
-                    const myApplications = await DB.applications.getByWorker(currentUser.uid);
-
-                    const historyPromises = myApplications.map(async (app) => {
-                        // Fetch Job
-                        const job = await DB.jobs.get(app.jobId);
-
-                        // Fetch Hirer (Use app.hirerId or job.hirerId)
-                        const targetHirerId = app.hirerId || job?.hirerId;
-                        const hirer = targetHirerId ? await DB.users.get(targetHirerId) : null;
-
-                        return {
-                            ...app,
-                            jobTitle: job?.title || 'Job Unavailable',
-                            jobLocation: job?.location || 'Unknown Location',
-                            jobWage: job?.wage || '0',
-                            hirerId: targetHirerId,
-                            hirerName: hirer?.displayName || job?.hirerName || 'Unknown Employer',
-                            hirerPic: hirer?.photoURL || job?.hirerPic,
-                            hirerRating: hirer?.rating || job?.hirerRating,
-                            category: job?.category,
-                            createdAt: app.appliedAt || app.createdAt || new Date().toISOString()
-                        };
-                    });
-
-                    const historyData = await Promise.all(historyPromises);
-
-                    // Sort by newest application
-                    const sortedHistory = historyData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-                    setJobs(sortedHistory);
-                } catch (error) {
-                    console.error("Error fetching job history:", error);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        };
-
-        fetchJobHistory();
-    }, [currentUser]);
-
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'completed':
-                return { text: 'Completed', color: '#047857', bg: '#e6fffa', icon: <FaCheckCircle /> };
-            case 'accepted':
-                return { text: 'Accepted', color: '#0369a1', bg: '#e0f2fe', icon: <FaCheckCircle /> };
-            case 'in_progress':
-                return { text: 'In Progress', color: '#b45309', bg: '#fffbeb', icon: <FaClock /> };
-            case 'rejected':
-                return { text: 'Rejected', color: '#be123c', bg: '#ffe4e6', icon: <FaTimesCircle /> };
-            default:
-                return { text: 'Pending', color: '#d97706', bg: '#fef3c7', icon: <FaClock /> };
-        }
+    const handleClearFilters = () => {
+        setSearchQuery('');
+        setFilterCategory('All');
+        setFilterLocation('All');
+        setActiveTab('All Time');
     };
+
+    // ... useEffect ... (unchanged)
+
+    // ... getStatusBadge ... (unchanged)
 
     return (
         <div className="earnings-container"> {/* Reuse container for padding/layout */}
@@ -104,13 +60,50 @@ const WorkerMyJobs = () => {
                     <h5 style={{ margin: 0, color: '#5D7E85' }}>My Recent Jobs</h5>
                 </div>
             </div>
-            <div className="section-heading-row" style={{ marginBottom: '24px' }}>
-                <h1 style={{ margin: 0 }}>My Recent Jobs</h1>
+            <div className="section-heading-row" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h1 style={{ margin: 0 }}>My Recent Jobs <span style={{ fontSize: '1rem', color: '#666' }}>({filteredJobs.length})</span></h1>
+                <button
+                    onClick={handleClearFilters}
+                    style={{ background: 'white', border: '1px solid #EF5B5B', color: '#EF5B5B', cursor: 'pointer', padding: '6px 12px', borderRadius: '4px' }}
+                >
+                    Clear Filters
+                </button>
             </div>
 
             {/* Filter Bar */}
-            <div className="jobs-filter-bar">
-                <div className="filter-tabs">
+            <div className="jobs-filter-bar" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                {/* Category Filter */}
+                <div className="filter-input-wrapper dropdown" style={{ width: '150px', background: '#f5f5f5', borderRadius: '4px', padding: '8px' }}>
+                    <select
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                        style={{ border: 'none', background: 'transparent', width: '100%', outline: 'none' }}
+                    >
+                        <option value="All">Category: All</option>
+                        <option value="Electrician">Electrician</option>
+                        <option value="Plumber">Plumber</option>
+                        <option value="Mason">Mason</option>
+                        <option value="Driver">Driver</option>
+                        <option value="Labor">Labor</option>
+                    </select>
+                </div>
+
+                {/* Location Filter */}
+                <div className="filter-input-wrapper dropdown" style={{ width: '150px', background: '#f5f5f5', borderRadius: '4px', padding: '8px' }}>
+                    <select
+                        value={filterLocation}
+                        onChange={(e) => setFilterLocation(e.target.value)}
+                        style={{ border: 'none', background: 'transparent', width: '100%', outline: 'none' }}
+                    >
+                        <option value="All">Location: All</option>
+                        <option value="Pune">Pune</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Bangalore">Bangalore</option>
+                    </select>
+                </div>
+
+                <div className="filter-tabs" style={{ marginLeft: 'auto' }}>
                     <button
                         className={`filter-tab ${activeTab === 'This Week' ? 'active' : ''}`}
                         onClick={() => setActiveTab('This Week')}

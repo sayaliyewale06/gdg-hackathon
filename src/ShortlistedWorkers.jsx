@@ -67,6 +67,60 @@ const ShortlistedWorkers = () => {
         fetchShortlisted();
     }, [currentUser]);
 
+    const [filters, setFilters] = useState({
+        skill: 'All Skills',
+        location: 'All Locations',
+        minSalary: 0,
+        maxSalary: 5000
+    });
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            skill: 'All Skills',
+            location: 'All Locations',
+            minSalary: 0,
+            maxSalary: 5000
+        });
+    };
+
+    // Filter Logic
+    const filteredWorkers = workers.filter(worker => {
+        // 1. Skill/Role Filter
+        if (filters.skill !== 'All Skills') {
+            const skill = filters.skill.toLowerCase();
+            const jobTitle = worker.jobTitle?.toLowerCase() || '';
+            const role = worker.role?.toLowerCase() || '';
+            // Also check skills array if available
+            const skillsMatch = worker.skills?.some(s => s.toLowerCase().includes(skill));
+
+            if (!jobTitle.includes(skill) && !role.includes(skill) && !skillsMatch) return false;
+        }
+
+        // 2. Location Filter
+        if (filters.location !== 'All Locations') {
+            const loc = filters.location.toLowerCase();
+            const workerLoc = worker.location?.toLowerCase() || '';
+            if (!workerLoc.includes(loc)) return false;
+        }
+
+        // 3. Wage Filter
+        const wage = parseInt(worker.wage) || 0; // Using wage from card logic
+        const min = parseInt(filters.minSalary) || 0;
+        const max = parseInt(filters.maxSalary) || 999999;
+
+        if (wage < min || wage > max) return false;
+
+        return true;
+    });
+
     const handleAssign = (name) => {
         // In a real app, this would update DB to 'hired' or move to another collection
         // Simulating "hired" by removing from shortlist
@@ -114,43 +168,77 @@ const ShortlistedWorkers = () => {
 
             {/* Filter Bar */}
             <div className="shortlist-filter-bar">
-                <select className="filter-select">
+                <select
+                    name="skill"
+                    className="filter-select"
+                    value={filters.skill}
+                    onChange={handleFilterChange}
+                >
                     <option>All Skills</option>
                     <option>Masonry</option>
                     <option>Plumbing</option>
                     <option>Electrical</option>
+                    <option>Carpentry</option>
+                    <option>Painting</option>
                 </select>
 
-                <select className="filter-select">
+                <select
+                    name="location"
+                    className="filter-select"
+                    value={filters.location}
+                    onChange={handleFilterChange}
+                >
                     <option>All Locations</option>
                     <option>Pune</option>
                     <option>Mumbai</option>
+                    <option>Delhi</option>
+                    <option>Bangalore</option>
                 </select>
 
                 <div className="salary-range">
                     <span style={{ fontSize: '0.9rem', color: '#666' }}>Min: ₹</span>
-                    <input type="number" defaultValue={0} className="salary-input" />
+                    <input
+                        name="minSalary"
+                        type="number"
+                        value={filters.minSalary}
+                        onChange={handleFilterChange}
+                        className="salary-input"
+                        placeholder="0"
+                    />
                 </div>
 
                 <div className="salary-range">
                     <span style={{ fontSize: '0.9rem', color: '#666' }}>Max: ₹</span>
-                    <input type="number" defaultValue={2000} className="salary-input" />
+                    <input
+                        name="maxSalary"
+                        type="number"
+                        value={filters.maxSalary}
+                        onChange={handleFilterChange}
+                        className="salary-input"
+                        placeholder="Max"
+                    />
                 </div>
 
                 <div className="filter-actions">
-                    <span className="clear-filters">Clear Filters</span>
-                    <button className="btn-filter"> - Filter</button>
+                    <span
+                        className="clear-filters"
+                        onClick={clearFilters}
+                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                        Clear Filters
+                    </span>
+                    <button className="btn-filter" style={{ opacity: 0.7, cursor: 'default' }}>Filter</button>
                 </div>
             </div>
 
             {/* List */}
-            <h2 className="shortlist-list-header">Shortlisted Workers ({workers.length})</h2>
+            <h2 className="shortlist-list-header">Shortlisted Workers ({filteredWorkers.length})</h2>
 
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '40px' }}>Loading...</div>
             ) : (
                 <div className="shortlist-list">
-                    {workers.map(worker => (
+                    {filteredWorkers.map(worker => (
                         <div className="shortlist-card" key={worker.id}>
                             {/* 1. Image */}
                             <div className="shortlist-img-container">
@@ -204,9 +292,9 @@ const ShortlistedWorkers = () => {
                         </div>
                     ))}
 
-                    {workers.length === 0 && (
+                    {filteredWorkers.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                            No shortlisted workers found.
+                            {workers.length > 0 ? 'No workers match your filters.' : 'No shortlisted workers found.'}
                         </div>
                     )}
                 </div>

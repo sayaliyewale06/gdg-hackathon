@@ -2,8 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import LoginSelection from './LoginSelection';
 import WorkerDashboard from './WorkerDashboard';
+import WorkerProfile from './WorkerProfile';
 import HirerDashboard from './HirerDashboard';
 import JobApplication from './JobApplication';
+import WorkerProfileView from './WorkerProfileView';
 import './App.css';
 
 function App() {
@@ -14,6 +16,8 @@ function App() {
         <Routes>
           <Route path="/" element={<LoginSelection />} />
           <Route path="/worker-dashboard" element={<WorkerDashboard />} />
+          <Route path="/profile" element={<WorkerProfile />} />
+          <Route path="/worker-profile/:workerId" element={<WorkerProfileView />} />
           <Route path="/my-jobs" element={<Navigate to="/worker-dashboard" state={{ view: 'myjobs' }} replace />} />
           <Route path="/hire-dashboard/*" element={<HirerDashboard />} />
           <Route path="/apply-job/:jobId" element={<JobApplication />} />
