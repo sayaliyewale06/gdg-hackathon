@@ -3,6 +3,7 @@ import './WorkerDashboard.css';
 import { DB } from './lib/db';
 import { useAuth } from './context/AuthContext';
 import { FaCheckCircle, FaQrcode, FaDownload, FaBriefcase, FaRupeeSign, FaTools, FaMapMarkerAlt, FaStar, FaEye, FaUserCircle } from 'react-icons/fa';
+import QRCode from "react-qr-code";
 
 const WorkerQRCode = () => {
     const { currentUser } = useAuth();
@@ -59,11 +60,46 @@ const WorkerQRCode = () => {
         fetchData();
     }, [currentUser]);
 
-    const qrData = currentUser ? `https://digitalnaka.com/worker/${currentUser.uid}` : "";
+    const profileUrl = currentUser ? `${window.location.origin}/profile/${currentUser.uid}` : "";
+
     const downloadQR = () => {
-        // Simple mock download
-        alert("Downloading QR Code...");
+        const svg = document.getElementById("worker-qr-code");
+        if (!svg) return;
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const data = new XMLSerializer().serializeToString(svg);
+        const img = new Image();
+
+        // Create a Blob from the SVG data
+        const svgBlob = new Blob([data], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = () => {
+            // Set canvas size (add padding)
+            canvas.width = 250;
+            canvas.height = 250;
+
+            // Draw white background
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the image
+            // Note: SVG viewBox might need handling if simple drawImage is off, but typically works for simple QRs
+            ctx.drawImage(img, 0, 0, 250, 250);
+
+            const pngUrl = canvas.toDataURL("image/png");
+            const downloadLink = document.createElement("a");
+            downloadLink.href = pngUrl;
+            downloadLink.download = "worker-profile-qr.png";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
     };
+
     return (
         <div className="earnings-container">
             <div className="section-heading-row">
@@ -96,18 +132,21 @@ const WorkerQRCode = () => {
                     </div>
 
                     <div className="qr-code-box">
-                        <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}`}
-                            alt="Worker QR Code"
-                            className="main-qr-img"
-                        />
+                        <div style={{ background: 'white', padding: '10px', borderRadius: '8px', display: 'inline-block' }}>
+                            <QRCode
+                                id="worker-qr-code"
+                                value={profileUrl}
+                                size={200}
+                                level="H"
+                            />
+                        </div>
                         <p className="qr-scan-text">Scan this unique QR code to view my resume.</p>
 
                         <div className="qr-action-buttons">
                             <button className="qr-btn primary">
                                 <FaQrcode style={{ marginRight: '8px' }} /> Scan QR Code
                             </button>
-                            <button className="qr-btn secondary">
+                            <button className="qr-btn secondary" onClick={downloadQR}>
                                 <FaDownload style={{ marginRight: '8px' }} /> Download QR Code
                             </button>
                         </div>
